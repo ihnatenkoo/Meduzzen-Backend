@@ -8,6 +8,6 @@ export class AppController {
 
   @Get()
   async getHealthCheck(): Promise<IHealthCheck> {
-    return await this.appService.getHealthCheck();
+    return this.appService.getHealthCheck();
   }
 }
