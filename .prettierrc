@@ -4,8 +4,6 @@
   "endOfLine": "auto",
   "bracketSpacing": true,
   "printWidth": 80,
-  "tabWidth": 2,
-  "useTabs": true,
   "semi": true,
   "auto_format_on_save": true
 }
