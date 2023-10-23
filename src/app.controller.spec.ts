@@ -15,8 +15,9 @@ describe('AppController', () => {
   });
 
   describe('root', () => {
-    it('should return health check info', () => {
-      expect(appController.getHealthCheck()).toEqual({
+    it('should return health check info', async () => {
+      const result = await appController.getHealthCheck();
+      expect(result).toEqual({
         status_code: 200,
         detail: 'ok',
         result: 'working',
