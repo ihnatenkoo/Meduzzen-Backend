@@ -18,10 +18,10 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "docker:prod": "docker build -t meduzzen-app-prod --target production .",
-    "docker:prod-run": "npm run docker:prod && docker run -p3000:3000 meduzzen-app-prod",
-    "docker:test": "docker build -t meduzzen-app-test --target test .",
-    "docker:test-run": "npm run docker:test && docker run -p3000:3000 meduzzen-app-test"
+    "docker:prod": "docker build -t med-back-prod --target production .",
+    "docker:prod-run": "npm run docker:prod && docker run -p3001:3000 med-back-prod",
+    "docker:test": "docker build -t med-back-test --target test .",
+    "docker:test-run": "npm run docker:test && docker run -p3001:3000 med-back-test"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",
