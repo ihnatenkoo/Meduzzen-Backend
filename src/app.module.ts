@@ -1,13 +1,18 @@
 import { MiddlewareConsumer, Module, RequestMethod } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
+import { dataSourceOptions } from 'db/data-source';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { CorsMiddleware } from './middlewares/cors.middleware';
-import { dataSourceOptions } from 'db/data-source';
+import { UserModule } from './user/user.module';
 
 @Module({
-  imports: [ConfigModule.forRoot(), TypeOrmModule.forRoot(dataSourceOptions)],
+  imports: [
+    ConfigModule.forRoot(),
+    TypeOrmModule.forRoot(dataSourceOptions),
+    UserModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

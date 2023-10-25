@@ -21,7 +21,12 @@
     "docker:prod": "docker build -t med-back-prod --target production .",
     "docker:prod-run": "npm run docker:prod && docker run -p3001:3000 med-back-prod",
     "docker:test": "docker build -t med-back-test --target test .",
-    "docker:test-run": "npm run docker:test && docker run -p3001:3000 med-back-test"
+    "docker:test-run": "npm run docker:test && docker run -p3001:3000 med-back-test",
+    "typeorm": "npm run build && npx typeorm -d dist/db/data-source.js",
+    "db:drop": "npm run typeorm schema:drop",
+    "migration:generate": "npm run typeorm -- migration:generate",
+    "migration:run": "npm run typeorm -- migration:run",
+    "migration:revert": "npm run typeorm -- migration:revert "
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",
@@ -29,6 +34,7 @@
     "@nestjs/core": "^10.0.0",
     "@nestjs/platform-express": "^10.0.0",
     "@nestjs/typeorm": "^10.0.0",
+    "dotenv": "^16.3.1",
     "pg": "^8.11.3",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.1",
