@@ -1,6 +1,6 @@
 FROM node:20-alpine As development
 
-WORKDIR /usr/src/app
+WORKDIR /app
 
 COPY package*.json ./
 
@@ -15,11 +15,11 @@ CMD [ "npm", "run", "test" ]
 
 FROM node:20-alpine As build
 
-WORKDIR /usr/src/app
+WORKDIR /app
 
 COPY package*.json ./
 
-COPY --from=development /usr/src/app/node_modules ./node_modules
+COPY --from=development /app/node_modules ./node_modules
 
 COPY . .
 
@@ -32,8 +32,8 @@ RUN npm ci --only=production && npm cache clean --force
 
 FROM node:20-alpine As production
 
-COPY --from=build /usr/src/app/node_modules ./node_modules
+COPY --from=build /app/node_modules ./node_modules
 
-COPY --from=build /usr/src/app/dist ./dist
+COPY --from=build /app/dist ./dist
 
 CMD [ "node", "dist/main.js" ]
