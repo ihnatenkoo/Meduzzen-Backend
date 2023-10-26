@@ -41,7 +41,7 @@ export class UserService {
     const user = await this.userRepository.findOne({ where: { id } });
 
     if (!user) {
-      throw new NotFoundException();
+      throw new NotFoundException('User not found');
     }
 
     return user;
@@ -58,6 +58,15 @@ export class UserService {
     const user = await this.findUserById(userId);
     const { name, avatar, bio } = updateUserDto;
 
-    return this.userRepository.merge(user, { name, avatar, bio });
+    const updatedUser = this.userRepository.merge(user, { name, avatar, bio });
+
+    return this.userRepository.save(updatedUser);
+  }
+
+  async deleteUser(userId: number): Promise<IUser> {
+    const user = await this.findUserById(userId);
+    await this.userRepository.delete(userId);
+
+    return user;
   }
 }

@@ -1,8 +1,16 @@
-import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+} from '@nestjs/common';
 import { CreateUserDto } from './dto/createUser.dto';
-import { UserService } from './user.service';
-import { IUser } from './types/user.interface';
 import { UpdateUserDto } from './dto/updateUser.dto';
+import { IUser } from './types/user.interface';
+import { UserService } from './user.service';
 
 @Controller('user')
 export class UserController {
@@ -13,14 +21,14 @@ export class UserController {
     return this.userService.createUser(createUserDto);
   }
 
-  @Get(':id')
-  async findUserById(@Param('id') userId: number): Promise<IUser> {
-    return this.userService.findUserById(userId);
-  }
-
   @Get('list')
   async getAllUsers(): Promise<IUser[]> {
     return this.userService.getAllUsers();
+  }
+
+  @Get(':id')
+  async findUserById(@Param('id') userId: number): Promise<IUser> {
+    return this.userService.findUserById(userId);
   }
 
   @Patch(':id')
@@ -29,5 +37,10 @@ export class UserController {
     @Body() updateUserDto: UpdateUserDto,
   ): Promise<IUser> {
     return this.userService.updateUser(userId, updateUserDto);
+  }
+
+  @Delete(':id')
+  async deleteUser(@Param('id') userId: number): Promise<IUser> {
+    return this.userService.deleteUser(userId);
   }
 }
