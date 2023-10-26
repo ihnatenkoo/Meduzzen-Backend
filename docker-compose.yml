@@ -38,6 +38,8 @@ services:
     restart: unless-stopped
 
   pg_admin:
+    depends_on:
+      - postgres
     container_name: pgadmin
     image: dpage/pgadmin4
     environment:
