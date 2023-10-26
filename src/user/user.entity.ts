@@ -6,13 +6,13 @@ export class UserEntity {
   id: number;
 
   @Column()
-  username: string;
-
-  @Column()
   email: string;
 
   @Column({ select: false })
-  hashPassword: string;
+  password: string;
+
+  @Column({ default: '' })
+  name: string;
 
   @Column({ default: '' })
   bio: string;
