@@ -10,6 +10,8 @@ export const dataSourceOptions: DataSourceOptions = {
   username: process.env.POSTGRES_USER,
   password: process.env.POSTGRES_PASSWORD,
   entities: [join(__dirname, '../', 'src', '**', '*.entity.js')],
+  migrations: [join(__dirname, 'migrations', '*.js')],
+  synchronize: false,
 };
 
 const dataSource = new DataSource(dataSourceOptions);
