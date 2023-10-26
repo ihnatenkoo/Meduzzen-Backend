@@ -1,4 +1,9 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { hash } from 'bcryptjs';
 import { Repository } from 'typeorm';
@@ -29,5 +34,19 @@ export class UserService {
     const newUser = { ...createUserDto, password: hashPassword };
 
     return this.userRepository.save(newUser);
+  }
+
+  async findUserById(id: number): Promise<IUser> {
+    const user = await this.userRepository.findOne({ where: { id } });
+
+    if (!user) {
+      throw new NotFoundException();
+    }
+
+    return user;
+  }
+
+  async getAllUsers(): Promise<IUser[]> {
+    return this.userRepository.find();
   }
 }
