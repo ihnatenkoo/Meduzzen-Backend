@@ -10,6 +10,7 @@ import { Repository } from 'typeorm';
 import { UserEntity } from './user.entity';
 import { CreateUserDto } from './dto/createUser.dto';
 import { IUser } from './types/user.interface';
+import { UpdateUserDto } from './dto/updateUser.dto';
 
 @Injectable()
 export class UserService {
@@ -48,5 +49,15 @@ export class UserService {
 
   async getAllUsers(): Promise<IUser[]> {
     return this.userRepository.find();
+  }
+
+  async updateUser(
+    userId: number,
+    updateUserDto: UpdateUserDto,
+  ): Promise<IUser> {
+    const user = await this.findUserById(userId);
+    const { name, avatar, bio } = updateUserDto;
+
+    return this.userRepository.merge(user, { name, avatar, bio });
   }
 }
