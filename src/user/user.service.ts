@@ -35,9 +35,11 @@ export class UserService {
     }
 
     const hashPassword = await hash(createUserDto.password, 10);
-    const newUser = { ...createUserDto, password: hashPassword };
 
-    return this.userRepository.save(newUser);
+    return this.userRepository.save({
+      ...createUserDto,
+      password: hashPassword,
+    });
   }
 
   async findUserById(id: number): Promise<IUser> {
