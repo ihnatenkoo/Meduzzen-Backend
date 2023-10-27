@@ -2,10 +2,13 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { hash } from 'bcryptjs';
-import { CreateUserDto } from 'src/user/dto/createUser.dto';
+import { compare, hash } from 'bcryptjs';
+import { CreateUserDto } from 'src/auth/dto/createUser.dto';
 import { UserEntity } from 'src/user/user.entity';
 import { ITokenPayload, ITokens } from './types';
+import { LoginDto } from './dto/login.dto';
+
+export const BAD_CREDENTIALS = 'Wrong email or password';
 
 @Injectable()
 export class AuthService {
@@ -16,11 +19,11 @@ export class AuthService {
   ) {}
 
   async createUser(createUserDto: CreateUserDto): Promise<ITokens> {
-    const findByEmail = await this.userRepository.findOne({
+    const existedUser = await this.userRepository.findOne({
       where: { email: createUserDto.email },
     });
 
-    if (findByEmail) {
+    if (existedUser) {
       throw new HttpException(
         'User already signed up',
         HttpStatus.UNPROCESSABLE_ENTITY,
@@ -34,9 +37,33 @@ export class AuthService {
       password: hashPassword,
     });
 
-    const tokens = this.generateTokens({ id: user.id, email: user.email });
+    return this.generateTokens({ id: user.id, email: user.email });
+  }
 
-    return tokens;
+  async login(loginDto: LoginDto): Promise<ITokens> {
+    const user = await this.userRepository.findOne({
+      where: { email: loginDto.email },
+      select: ['password'],
+    });
+
+    if (!user) {
+      throw new HttpException(BAD_CREDENTIALS, HttpStatus.FORBIDDEN);
+    }
+
+    const isPasswordCorrect = await this.validateUser(
+      loginDto.password,
+      user.password,
+    );
+
+    if (!isPasswordCorrect) {
+      throw new HttpException(BAD_CREDENTIALS, HttpStatus.FORBIDDEN);
+    }
+
+    return this.generateTokens({ id: user.id, email: user.email });
+  }
+
+  async validateUser(password: string, passwordHash: string): Promise<boolean> {
+    return compare(password, passwordHash);
   }
 
   generateTokens(payload: ITokenPayload): ITokens {
