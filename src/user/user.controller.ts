@@ -9,19 +9,21 @@ import {
   Query,
 } from '@nestjs/common';
 import { PageDto } from 'src/pagination/dto/page.dto';
+import { PageOptionsDto } from 'src/pagination/dto/page-options.dto';
 import { CreateUserDto } from './dto/createUser.dto';
 import { UpdateUserDto } from './dto/updateUser.dto';
-import { PageOptionsDto } from 'src/pagination/dto/page-options.dto';
-import { IUser } from './types/user.interface';
 import { UserService } from './user.service';
 import { UserEntity } from './user.entity';
+import { IUserResponse } from './types/user-response.interface';
 
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Post('register')
-  async createUser(@Body() createUserDto: CreateUserDto): Promise<IUser> {
+  async createUser(
+    @Body() createUserDto: CreateUserDto,
+  ): Promise<IUserResponse> {
     return this.userService.createUser(createUserDto);
   }
 
@@ -33,7 +35,7 @@ export class UserController {
   }
 
   @Get(':id')
-  async findUserById(@Param('id') userId: number): Promise<IUser> {
+  async findUserById(@Param('id') userId: number): Promise<IUserResponse> {
     return this.userService.findUserById(userId);
   }
 
@@ -41,12 +43,12 @@ export class UserController {
   async updateUser(
     @Param('id') userId: number,
     @Body() updateUserDto: UpdateUserDto,
-  ): Promise<IUser> {
+  ): Promise<IUserResponse> {
     return this.userService.updateUser(userId, updateUserDto);
   }
 
   @Delete(':id')
-  async deleteUser(@Param('id') userId: number): Promise<IUser> {
+  async deleteUser(@Param('id') userId: number): Promise<{ message: string }> {
     return this.userService.deleteUser(userId);
   }
 }

@@ -12,7 +12,7 @@ import { PageMetaDto } from 'src/pagination/dto/page-meta.dto';
 import { PageDto } from 'src/pagination/dto/page.dto';
 import { UpdateUserDto } from './dto/updateUser.dto';
 import { CreateUserDto } from './dto/createUser.dto';
-import { IUser } from './types/user.interface';
+import { IUserResponse } from './types/user-response.interface';
 import { UserEntity } from './user.entity';
 
 @Injectable()
@@ -22,7 +22,7 @@ export class UserService {
     private readonly userRepository: Repository<UserEntity>,
   ) {}
 
-  async createUser(createUserDto: CreateUserDto): Promise<IUser> {
+  async createUser(createUserDto: CreateUserDto): Promise<IUserResponse> {
     const findByEmail = await this.userRepository.findOne({
       where: { email: createUserDto.email },
     });
@@ -36,20 +36,22 @@ export class UserService {
 
     const hashPassword = await hash(createUserDto.password, 10);
 
-    return this.userRepository.save({
+    const user = await this.userRepository.save({
       ...createUserDto,
       password: hashPassword,
     });
+
+    return { user };
   }
 
-  async findUserById(id: number): Promise<IUser> {
+  async findUserById(id: number): Promise<IUserResponse> {
     const user = await this.userRepository.findOne({ where: { id } });
 
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    return user;
+    return { user };
   }
 
   async getAllUsers({
@@ -76,19 +78,25 @@ export class UserService {
   async updateUser(
     userId: number,
     updateUserDto: UpdateUserDto,
-  ): Promise<IUser> {
-    const user = await this.findUserById(userId);
+  ): Promise<IUserResponse> {
+    const { user: userById } = await this.findUserById(userId);
     const { name, avatar, bio } = updateUserDto;
 
-    const updatedUser = this.userRepository.merge(user, { name, avatar, bio });
+    const updatedUser = this.userRepository.merge(userById, {
+      name,
+      avatar,
+      bio,
+    });
 
-    return this.userRepository.save(updatedUser);
+    const user = await this.userRepository.save(updatedUser);
+
+    return { user };
   }
 
-  async deleteUser(userId: number): Promise<IUser> {
-    const user = await this.findUserById(userId);
+  async deleteUser(userId: number): Promise<{ message: string }> {
+    const { user } = await this.findUserById(userId);
     await this.userRepository.delete(userId);
 
-    return user;
+    return { message: `User id:${user.id} deleted successfully` };
   }
 }
