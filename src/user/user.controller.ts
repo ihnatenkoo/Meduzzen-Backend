@@ -6,11 +6,15 @@ import {
   Param,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
+import { PageDto } from 'src/pagination/dto/page.dto';
 import { CreateUserDto } from './dto/createUser.dto';
 import { UpdateUserDto } from './dto/updateUser.dto';
+import { PageOptionsDto } from 'src/pagination/dto/page-options.dto';
 import { IUser } from './types/user.interface';
 import { UserService } from './user.service';
+import { UserEntity } from './user.entity';
 
 @Controller('user')
 export class UserController {
@@ -22,8 +26,10 @@ export class UserController {
   }
 
   @Get('list')
-  async getAllUsers(): Promise<IUser[]> {
-    return this.userService.getAllUsers();
+  async getAllUsers(
+    @Query() query: PageOptionsDto,
+  ): Promise<PageDto<UserEntity>> {
+    return this.userService.getAllUsers(query);
   }
 
   @Get(':id')

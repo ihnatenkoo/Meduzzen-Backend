@@ -7,10 +7,13 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { hash } from 'bcryptjs';
 import { Repository } from 'typeorm';
-import { UserEntity } from './user.entity';
+import { PageOptionsDto } from 'src/pagination/dto/page-options.dto';
+import { PageMetaDto } from 'src/pagination/dto/page-meta.dto';
+import { PageDto } from 'src/pagination/dto/page.dto';
+import { UpdateUserDto } from './dto/updateUser.dto';
 import { CreateUserDto } from './dto/createUser.dto';
 import { IUser } from './types/user.interface';
-import { UpdateUserDto } from './dto/updateUser.dto';
+import { UserEntity } from './user.entity';
 
 @Injectable()
 export class UserService {
@@ -47,8 +50,25 @@ export class UserService {
     return user;
   }
 
-  async getAllUsers(): Promise<IUser[]> {
-    return this.userRepository.find();
+  async getAllUsers({
+    page,
+    limit,
+    sort,
+  }: PageOptionsDto): Promise<PageDto<UserEntity>> {
+    const pageOptionsDto = new PageOptionsDto(page, limit, sort);
+
+    const queryBuilder = this.userRepository.createQueryBuilder('user');
+    queryBuilder
+      .orderBy('user.id', pageOptionsDto.sort)
+      .skip(pageOptionsDto.skip)
+      .take(pageOptionsDto.limit);
+
+    const itemCount = await queryBuilder.getCount();
+    const { entities } = await queryBuilder.getRawAndEntities();
+
+    const pageMetaDto = new PageMetaDto({ itemCount, pageOptionsDto });
+
+    return new PageDto(entities, pageMetaDto);
   }
 
   async updateUser(
