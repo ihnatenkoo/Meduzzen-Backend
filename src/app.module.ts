@@ -4,6 +4,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule } from '@nestjs/config';
 import { dataSourceOptions } from 'db/data-source';
 import { CorsMiddleware } from './middlewares/cors.middleware';
+import { AuthMiddleware } from './middlewares/auth.middleware';
 import { AppService } from './app.service';
 import { AppController } from './app.controller';
 import { UserModule } from './user/user.module';
@@ -23,7 +24,7 @@ import { AuthModule } from './auth/auth.module';
 export class AppModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
-      .apply(CorsMiddleware)
+      .apply(CorsMiddleware, AuthMiddleware)
       .forRoutes({ path: '*', method: RequestMethod.ALL });
   }
 }
