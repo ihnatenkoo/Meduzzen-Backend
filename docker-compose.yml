@@ -1,0 +1,60 @@
+version: '3.5'
+
+services:
+  api:
+    depends_on:
+      - postgres
+    build:
+      dockerfile: Dockerfile
+      context: .
+      target: development
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    command: npm run start:dev
+    ports:
+      - 3001:3000
+    networks:
+      - med_app
+
+  postgres:
+    container_name: postgres
+    image: postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      PGDATA: /data/postgres
+    volumes:
+      - postgres:/data/docker-volumes/postgres
+    ports:
+      - 5432:5432
+    networks:
+      - med_app
+    restart: unless-stopped
+
+  pg_admin:
+    depends_on:
+      - postgres
+    container_name: pgadmin
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    volumes:
+      - pgadmin:/data/docker-volumes/pgadmin
+    ports:
+      - 5050:80
+    networks:
+      - med_app
+    restart: unless-stopped
+
+networks:
+  med_app:
+    driver: bridge
+
+volumes:
+  postgres:
+  pgadmin:
