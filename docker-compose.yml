@@ -12,9 +12,11 @@ services:
       - .:/app
     env_file:
       - .env
+    environment:
+      DB_HOST: postgres
     command: npm run start:dev
     ports:
-      - 3001:3000
+      - 3001:3001
     networks:
       - med_app
 
