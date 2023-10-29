@@ -1,12 +1,19 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { compare, hash } from 'bcryptjs';
+import { randomBytes } from 'crypto';
 import { CreateUserDto } from 'src/auth/dto/createUser.dto';
 import { UserEntity } from 'src/user/user.entity';
 import { ITokenPayload, ITokens } from './types';
 import { LoginDto } from './dto/login.dto';
+import { LoginAuth0Dto } from './dto/loginAuth0.dto';
 
 export const BAD_CREDENTIALS = 'Wrong email or password';
 
@@ -60,6 +67,36 @@ export class AuthService {
     }
 
     return this.generateTokens({ id: user.id, email: user.email });
+  }
+
+  async loginAuth0({ accessToken, user }: LoginAuth0Dto): Promise<ITokens> {
+    const { email, name, avatar } = user;
+
+    try {
+      this.jwtService.verify(accessToken, {
+        secret: process.env.AUTH0_SECRET_KEY,
+      });
+
+      const existedUser = await this.userRepository.findOne({
+        where: { email },
+      });
+
+      if (!existedUser) {
+        return this.createUser({
+          email,
+          name,
+          avatar,
+          password: randomBytes(8).toString('hex'),
+        });
+      }
+
+      return this.generateTokens({
+        id: existedUser.id,
+        email: existedUser.email,
+      });
+    } catch (e) {
+      throw new UnauthorizedException();
+    }
   }
 
   async validateUser(password: string, passwordHash: string): Promise<boolean> {

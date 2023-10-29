@@ -11,6 +11,7 @@ import { CreateUserDto } from 'src/auth/dto/createUser.dto';
 import { IUser } from 'src/user/types/user.interface';
 import { IUserResponse } from 'src/user/types/user-response.interface';
 import { LoginDto } from './dto/login.dto';
+import { LoginAuth0Dto } from './dto/loginAuth0.dto';
 import { ITokens } from './types';
 import { AuthService } from './auth.service';
 
@@ -27,6 +28,12 @@ export class AuthController {
   @HttpCode(200)
   async login(@Body() loginDto: LoginDto): Promise<ITokens> {
     return this.authService.login(loginDto);
+  }
+
+  @Post('login-auth0')
+  @HttpCode(200)
+  async loginAuth0(@Body() loginAuth0Dto: LoginAuth0Dto): Promise<ITokens> {
+    return this.authService.loginAuth0(loginAuth0Dto);
   }
 
   @Get('me')
