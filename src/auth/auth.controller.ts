@@ -4,9 +4,10 @@ import {
   Post,
   HttpCode,
   Get,
-  UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common';
 import { User } from 'src/decorators/user.decorator';
+import { AuthGuard } from 'src/guards/auth.guard';
 import { CreateUserDto } from 'src/auth/dto/createUser.dto';
 import { IUser } from 'src/user/types/user.interface';
 import { IUserResponse } from 'src/user/types/user-response.interface';
@@ -37,11 +38,8 @@ export class AuthController {
   }
 
   @Get('me')
+  @UseGuards(AuthGuard)
   async userInfo(@User() user: IUser): Promise<IUserResponse> {
-    if (!user) {
-      throw new UnauthorizedException();
-    }
-
     return { user };
   }
 }
