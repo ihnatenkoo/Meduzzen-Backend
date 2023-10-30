@@ -107,6 +107,14 @@ export class AuthService {
     }
   }
 
+  async initResetPassword(email: string) {
+    const user = await this.userRepository.findOne({
+      where: { email },
+    });
+
+    return user;
+  }
+
   async validateUser(password: string, passwordHash: string): Promise<boolean> {
     return compare(password, passwordHash);
   }

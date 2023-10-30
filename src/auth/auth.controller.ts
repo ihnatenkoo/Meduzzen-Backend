@@ -44,4 +44,10 @@ export class AuthController {
   async userInfo(@User() user: IUser): Promise<IUserResponse> {
     return { user };
   }
+
+  @Post('reset-password')
+  @HttpCode(200)
+  async initResetPassword(@Body('email') email: string) {
+    this.authService.initResetPassword(email);
+  }
 }
