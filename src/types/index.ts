@@ -6,6 +6,10 @@ export interface IExpressRequest extends Request {
   user?: UserEntity;
 }
 
+export interface IMessage {
+  message: string;
+}
+
 export interface IHealthCheck {
   status_code: HttpStatus;
   detail: string;

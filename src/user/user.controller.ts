@@ -13,6 +13,7 @@ import { PageOptionsDto } from 'src/pagination/dto/page-options.dto';
 import { UpdateUserDto } from './dto/updateUser.dto';
 import { UserService } from './user.service';
 import { UserEntity } from './user.entity';
+import { IMessage } from 'src/types';
 import { IUserResponse } from './types/user-response.interface';
 
 @Controller('user')
@@ -43,7 +44,7 @@ export class UserController {
   async deleteUser(
     @User('id') userId: number,
     @Param('id') userIdToDelete: string,
-  ): Promise<{ message: string }> {
+  ): Promise<IMessage> {
     return this.userService.deleteUser(userId, Number(userIdToDelete));
   }
 }

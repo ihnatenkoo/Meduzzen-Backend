@@ -2,6 +2,7 @@ import { MiddlewareConsumer, Module, RequestMethod } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule } from '@nestjs/config';
+import { MailerModule } from '@nestjs-modules/mailer';
 import { dataSourceOptions } from 'db/data-source';
 import { CorsMiddleware } from './middlewares/cors.middleware';
 import { AuthMiddleware } from './middlewares/auth.middleware';
@@ -14,6 +15,9 @@ import { AuthModule } from './auth/auth.module';
   imports: [
     ConfigModule.forRoot(),
     TypeOrmModule.forRoot(dataSourceOptions),
+    MailerModule.forRoot({
+      transport: process.env.NODEMAILER_TRANSPORT,
+    }),
     JwtModule.register({}),
     UserModule,
     AuthModule,

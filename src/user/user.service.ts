@@ -10,6 +10,7 @@ import { PageMetaDto } from 'src/pagination/dto/page-meta.dto';
 import { PageDto } from 'src/pagination/dto/page.dto';
 import { UpdateUserDto } from './dto/updateUser.dto';
 import { IUserResponse } from './types/user-response.interface';
+import { IMessage } from 'src/types';
 import { UserEntity } from './user.entity';
 
 @Injectable()
@@ -68,10 +69,7 @@ export class UserService {
     return { user };
   }
 
-  async deleteUser(
-    userId: number,
-    userIdToDelete: number,
-  ): Promise<{ message: string }> {
+  async deleteUser(userId: number, userIdToDelete: number): Promise<IMessage> {
     if (userId !== userIdToDelete) {
       throw new ForbiddenException();
     }

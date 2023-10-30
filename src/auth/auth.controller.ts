@@ -13,6 +13,8 @@ import { IUser } from 'src/user/types/user.interface';
 import { IUserResponse } from 'src/user/types/user-response.interface';
 import { LoginDto } from './dto/login.dto';
 import { LoginAuth0Dto } from './dto/loginAuth0.dto';
+import { ResetPasswordDto } from './dto/resetPassword.dto';
+import { IMessage } from 'src/types';
 import { ICreateUserResponse, ITokens } from './types';
 import { AuthService } from './auth.service';
 
@@ -45,9 +47,17 @@ export class AuthController {
     return { user };
   }
 
+  @Post('init-reset-password')
+  @HttpCode(200)
+  async initResetPassword(@Body('email') email: string): Promise<IMessage> {
+    return this.authService.initResetPassword(email);
+  }
+
   @Post('reset-password')
   @HttpCode(200)
-  async initResetPassword(@Body('email') email: string) {
-    this.authService.initResetPassword(email);
+  async resetPassword(
+    @Body() resetPasswordDto: ResetPasswordDto,
+  ): Promise<IMessage> {
+    return this.authService.resetPassword(resetPasswordDto);
   }
 }
