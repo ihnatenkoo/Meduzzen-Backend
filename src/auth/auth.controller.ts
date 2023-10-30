@@ -13,7 +13,7 @@ import { IUser } from 'src/user/types/user.interface';
 import { IUserResponse } from 'src/user/types/user-response.interface';
 import { LoginDto } from './dto/login.dto';
 import { LoginAuth0Dto } from './dto/loginAuth0.dto';
-import { ITokens } from './types';
+import { ICreateUserResponse, ITokens } from './types';
 import { AuthService } from './auth.service';
 
 @Controller('auth')
@@ -21,7 +21,9 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
-  async createUser(@Body() createUserDto: CreateUserDto): Promise<ITokens> {
+  async createUser(
+    @Body() createUserDto: CreateUserDto,
+  ): Promise<ICreateUserResponse> {
     return this.authService.createUser(createUserDto);
   }
 

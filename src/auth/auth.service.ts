@@ -11,7 +11,7 @@ import { compare, hash } from 'bcryptjs';
 import { randomBytes } from 'crypto';
 import { CreateUserDto } from 'src/auth/dto/createUser.dto';
 import { UserEntity } from 'src/user/user.entity';
-import { ITokenPayload, ITokens } from './types';
+import { ICreateUserResponse, ITokenPayload, ITokens } from './types';
 import { LoginDto } from './dto/login.dto';
 import { LoginAuth0Dto } from './dto/loginAuth0.dto';
 
@@ -25,7 +25,7 @@ export class AuthService {
     private readonly userRepository: Repository<UserEntity>,
   ) {}
 
-  async createUser(createUserDto: CreateUserDto): Promise<ITokens> {
+  async createUser(createUserDto: CreateUserDto): Promise<ICreateUserResponse> {
     const existedUser = await this.userRepository.findOne({
       where: { email: createUserDto.email },
     });
@@ -44,7 +44,10 @@ export class AuthService {
       password: hashPassword,
     });
 
-    return this.generateTokens({ id: user.id, email: user.email });
+    return {
+      message: `User created successfully`,
+      userId: user.id,
+    };
   }
 
   async login(loginDto: LoginDto): Promise<ITokens> {
@@ -82,17 +85,22 @@ export class AuthService {
       });
 
       if (!existedUser) {
-        return this.createUser({
+        const { userId } = await this.createUser({
           email,
           name,
           avatar,
           password: randomBytes(8).toString('hex'),
         });
+
+        return this.generateTokens({
+          id: userId,
+          email,
+        });
       }
 
       return this.generateTokens({
         id: existedUser.id,
-        email: existedUser.email,
+        email,
       });
     } catch (e) {
       throw new UnauthorizedException();
