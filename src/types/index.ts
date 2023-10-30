@@ -5,3 +5,8 @@ export interface IHealthCheck {
   detail: string;
   result: string;
 }
+
+export const enum EResult {
+  WORKING = 'working',
+  ERROR = 'error',
+}
