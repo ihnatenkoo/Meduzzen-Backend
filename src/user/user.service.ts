@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PageOptionsDto } from 'src/pagination/dto/page-options.dto';
@@ -64,7 +68,14 @@ export class UserService {
     return { user };
   }
 
-  async deleteUser(userId: number): Promise<{ message: string }> {
+  async deleteUser(
+    userId: number,
+    userIdToDelete: number,
+  ): Promise<{ message: string }> {
+    if (userId !== userIdToDelete) {
+      throw new ForbiddenException();
+    }
+
     const { user } = await this.findUserById(userId);
     await this.userRepository.delete(userId);
 
