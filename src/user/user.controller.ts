@@ -5,12 +5,10 @@ import {
   Get,
   Param,
   Patch,
-  Post,
   Query,
 } from '@nestjs/common';
 import { PageDto } from 'src/pagination/dto/page.dto';
 import { PageOptionsDto } from 'src/pagination/dto/page-options.dto';
-import { CreateUserDto } from './dto/createUser.dto';
 import { UpdateUserDto } from './dto/updateUser.dto';
 import { UserService } from './user.service';
 import { UserEntity } from './user.entity';
@@ -19,13 +17,6 @@ import { IUserResponse } from './types/user-response.interface';
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
-
-  @Post('register')
-  async createUser(
-    @Body() createUserDto: CreateUserDto,
-  ): Promise<IUserResponse> {
-    return this.userService.createUser(createUserDto);
-  }
 
   @Get('list')
   async getAllUsers(

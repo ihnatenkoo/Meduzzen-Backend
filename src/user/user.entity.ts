@@ -11,12 +11,12 @@ export class UserEntity {
   @Column({ select: false })
   password: string;
 
-  @Column()
+  @Column({ nullable: true })
   name: string;
 
-  @Column()
+  @Column({ nullable: true })
   bio: string;
 
-  @Column()
+  @Column({ nullable: true })
   avatar: string;
 }

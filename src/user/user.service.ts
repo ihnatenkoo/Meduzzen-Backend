@@ -1,17 +1,10 @@
-import {
-  HttpException,
-  HttpStatus,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { hash } from 'bcryptjs';
 import { Repository } from 'typeorm';
 import { PageOptionsDto } from 'src/pagination/dto/page-options.dto';
 import { PageMetaDto } from 'src/pagination/dto/page-meta.dto';
 import { PageDto } from 'src/pagination/dto/page.dto';
 import { UpdateUserDto } from './dto/updateUser.dto';
-import { CreateUserDto } from './dto/createUser.dto';
 import { IUserResponse } from './types/user-response.interface';
 import { UserEntity } from './user.entity';
 
@@ -21,28 +14,6 @@ export class UserService {
     @InjectRepository(UserEntity)
     private readonly userRepository: Repository<UserEntity>,
   ) {}
-
-  async createUser(createUserDto: CreateUserDto): Promise<IUserResponse> {
-    const findByEmail = await this.userRepository.findOne({
-      where: { email: createUserDto.email },
-    });
-
-    if (findByEmail) {
-      throw new HttpException(
-        'User already signed up',
-        HttpStatus.UNPROCESSABLE_ENTITY,
-      );
-    }
-
-    const hashPassword = await hash(createUserDto.password, 10);
-
-    const user = await this.userRepository.save({
-      ...createUserDto,
-      password: hashPassword,
-    });
-
-    return { user };
-  }
 
   async findUserById(id: number): Promise<IUserResponse> {
     const user = await this.userRepository.findOne({ where: { id } });
