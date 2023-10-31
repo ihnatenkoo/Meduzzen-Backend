@@ -1,8 +1,10 @@
 import {
   Body,
   Controller,
+  // Delete,
   Get,
   Param,
+  Patch,
   Post,
   Query,
   UseGuards,
@@ -42,5 +44,20 @@ export class CompanyController {
   @Get(':id')
   async findCompanyById(@Param('id') id: number): Promise<ICompanyResponse> {
     return this.companyService.findCompanyById(id);
+  }
+
+  @Patch(':id')
+  @UseGuards(AuthGuard)
+  @UsePipes(new DtoValidationPipe())
+  async updateCompany(
+    @User('id') userId: number,
+    @Param('id') companyIdToUpdate: string,
+    @Body() updateCompanyDto: CreateCompanyDto,
+  ): Promise<ICompanyResponse> {
+    return this.companyService.updateCompany(
+      userId,
+      Number(companyIdToUpdate),
+      updateCompanyDto,
+    );
   }
 }

@@ -7,8 +7,12 @@ import { UserEntity } from 'src/user/user.entity';
 import { ICompanyResponse } from './types/company-response.interface';
 import { PageDto } from 'src/pagination/dto/page.dto';
 import { PageOptionsDto } from 'src/pagination/dto/page-options.dto';
-import { COMPANY_NOT_FOUND, USER_NOT_FOUND } from 'src/constants';
 import { paginate } from 'src/pagination/paginate';
+import {
+  ACCESS_DENIED,
+  COMPANY_NOT_FOUND,
+  USER_NOT_FOUND,
+} from 'src/constants';
 
 @Injectable()
 export class CompanyService {
@@ -60,5 +64,38 @@ export class CompanyService {
       query,
       repository: this.companyRepository,
     });
+  }
+
+  async updateCompany(
+    userId: number,
+    companyIdToUpdate: number,
+    updateCompanyDto: CreateCompanyDto,
+  ): Promise<ICompanyResponse> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['ownerCompanies'],
+    });
+
+    if (!user) {
+      throw new HttpException(USER_NOT_FOUND, HttpStatus.NOT_FOUND);
+    }
+
+    const { company: existedCompany } =
+      await this.findCompanyById(companyIdToUpdate);
+
+    if (
+      !user.ownerCompanies.some((company) => company.id === companyIdToUpdate)
+    ) {
+      throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
+    }
+
+    const updatedCompany = this.companyRepository.merge(
+      existedCompany,
+      updateCompanyDto,
+    );
+
+    const company = await this.companyRepository.save(updatedCompany);
+
+    return { company };
   }
 }

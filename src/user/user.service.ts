@@ -7,8 +7,8 @@ import { UpdateUserDto } from './dto/updateUser.dto';
 import { IUserResponse } from './types/user-response.interface';
 import { IMessage } from 'src/types';
 import { UserEntity } from './user.entity';
-import { ACCESS_DENIED, USER_NOT_FOUND } from 'src/constants';
 import { paginate } from 'src/pagination/paginate';
+import { ACCESS_DENIED, USER_NOT_FOUND } from 'src/constants';
 
 @Injectable()
 export class UserService {
@@ -38,17 +38,15 @@ export class UserService {
 
   async updateUser(
     userId: number,
+    userIdToUpdate: number,
     updateUserDto: UpdateUserDto,
   ): Promise<IUserResponse> {
-    const { user: userById } = await this.findUserById(userId);
-    const { name, avatar, bio } = updateUserDto;
+    if (userId !== userIdToUpdate) {
+      throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
+    }
 
-    const updatedUser = this.userRepository.merge(userById, {
-      name,
-      avatar,
-      bio,
-    });
-
+    const { user: existedUser } = await this.findUserById(userId);
+    const updatedUser = this.userRepository.merge(existedUser, updateUserDto);
     const user = await this.userRepository.save(updatedUser);
 
     return { user };
