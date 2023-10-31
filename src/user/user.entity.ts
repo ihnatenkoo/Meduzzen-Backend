@@ -1,4 +1,5 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { CompanyEntity } from 'src/company/company.entity';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity({ name: 'users' })
 export class UserEntity {
@@ -19,4 +20,7 @@ export class UserEntity {
 
   @Column({ nullable: true })
   avatar: string;
+
+  @OneToMany(() => CompanyEntity, (company) => company.owner)
+  ownerCompanies: CompanyEntity[];
 }
