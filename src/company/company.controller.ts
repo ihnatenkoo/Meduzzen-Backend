@@ -4,6 +4,7 @@ import {
   Get,
   Param,
   Post,
+  Query,
   UseGuards,
   UsePipes,
 } from '@nestjs/common';
@@ -13,6 +14,9 @@ import { CreateCompanyDto } from './dto/createCompany.dto';
 import { User } from 'src/decorators/user.decorator';
 import { CompanyService } from './company.service';
 import { ICompanyResponse } from './types/company-response.interface';
+import { PageDto } from 'src/pagination/dto/page.dto';
+import { PageOptionsDto } from 'src/pagination/dto/page-options.dto';
+import { CompanyEntity } from './company.entity';
 
 @Controller('company')
 export class CompanyController {
@@ -26,6 +30,13 @@ export class CompanyController {
     @Body() createCompanyDto: CreateCompanyDto,
   ): Promise<ICompanyResponse> {
     return this.companyService.createCompany(userId, createCompanyDto);
+  }
+
+  @Get('list')
+  async getAllCompanies(
+    @Query() query: PageOptionsDto,
+  ): Promise<PageDto<CompanyEntity>> {
+    return this.companyService.getAllCompanies(query);
   }
 
   @Get(':id')
