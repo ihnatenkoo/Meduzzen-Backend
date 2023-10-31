@@ -2,13 +2,13 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PageOptionsDto } from 'src/pagination/dto/page-options.dto';
-import { PageMetaDto } from 'src/pagination/dto/page-meta.dto';
 import { PageDto } from 'src/pagination/dto/page.dto';
 import { UpdateUserDto } from './dto/updateUser.dto';
 import { IUserResponse } from './types/user-response.interface';
 import { IMessage } from 'src/types';
 import { UserEntity } from './user.entity';
 import { ACCESS_DENIED, USER_NOT_FOUND } from 'src/constants';
+import { paginate } from 'src/pagination/paginate';
 
 @Injectable()
 export class UserService {
@@ -27,25 +27,13 @@ export class UserService {
     return { user };
   }
 
-  async getAllUsers({
-    page,
-    limit,
-    sort,
-  }: PageOptionsDto): Promise<PageDto<UserEntity>> {
-    const pageOptionsDto = new PageOptionsDto(page, limit, sort);
-
-    const queryBuilder = this.userRepository.createQueryBuilder('user');
-    queryBuilder
-      .orderBy('user.id', pageOptionsDto.sort)
-      .skip(pageOptionsDto.skip)
-      .take(pageOptionsDto.limit);
-
-    const itemCount = await queryBuilder.getCount();
-    const { entities } = await queryBuilder.getRawAndEntities();
-
-    const pageMetaDto = new PageMetaDto({ itemCount, pageOptionsDto });
-
-    return new PageDto(entities, pageMetaDto);
+  async getAllUsers(query: PageOptionsDto): Promise<PageDto<UserEntity>> {
+    return paginate<UserEntity>({
+      name: 'user',
+      orderBy: 'user.id',
+      query,
+      repository: this.userRepository,
+    });
   }
 
   async updateUser(
