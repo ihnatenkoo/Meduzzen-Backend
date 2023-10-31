@@ -1,11 +1,4 @@
-import {
-  ForbiddenException,
-  HttpException,
-  HttpStatus,
-  Injectable,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { MailerService } from '@nestjs-modules/mailer';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -19,8 +12,12 @@ import { IMessage } from 'src/types';
 import { LoginDto } from './dto/login.dto';
 import { LoginAuth0Dto } from './dto/loginAuth0.dto';
 import { ResetPasswordDto } from './dto/resetPassword.dto';
-
-export const BAD_CREDENTIALS = 'Wrong email or password';
+import {
+  ACCESS_DENIED,
+  BAD_CREDENTIALS,
+  UNAUTHORIZED,
+  USER_NOT_FOUND,
+} from 'src/constants';
 
 @Injectable()
 export class AuthService {
@@ -109,7 +106,7 @@ export class AuthService {
         email,
       });
     } catch (e) {
-      throw new UnauthorizedException();
+      throw new HttpException(UNAUTHORIZED, HttpStatus.UNAUTHORIZED);
     }
   }
 
@@ -119,7 +116,7 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new NotFoundException();
+      throw new HttpException(USER_NOT_FOUND, HttpStatus.NOT_FOUND);
     }
 
     const { activateToken } = this.generateTokens({ email, id: user.id });
@@ -151,7 +148,7 @@ export class AuthService {
       const user = await this.userRepository.findOne({ where: { id } });
 
       if (!user) {
-        throw new NotFoundException();
+        throw new HttpException(USER_NOT_FOUND, HttpStatus.NOT_FOUND);
       }
 
       const hashPassword = await hash(password, 10);
@@ -163,7 +160,7 @@ export class AuthService {
 
       return { message: 'Password was successfully changed' };
     } catch (error) {
-      throw new ForbiddenException();
+      throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
     }
   }
 
