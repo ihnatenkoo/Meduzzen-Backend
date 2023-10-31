@@ -9,6 +9,10 @@ import { plainToClass } from 'class-transformer';
 
 export class DtoValidationPipe implements PipeTransform {
   async transform(value: unknown, metadata: ArgumentMetadata) {
+    if (metadata.type !== 'body') {
+      return value;
+    }
+
     const object = plainToClass(metadata.metatype, value);
 
     if (typeof object !== 'object') {
