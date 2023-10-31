@@ -1,7 +1,7 @@
 import {
   Body,
   Controller,
-  // Delete,
+  Delete,
   Get,
   Param,
   Patch,
@@ -14,11 +14,12 @@ import { AuthGuard } from 'src/guards/auth.guard';
 import { DtoValidationPipe } from 'src/pipes/dtoValidation.pipe';
 import { CreateCompanyDto } from './dto/createCompany.dto';
 import { User } from 'src/decorators/user.decorator';
-import { CompanyService } from './company.service';
 import { ICompanyResponse } from './types/company-response.interface';
+import { IMessage } from 'src/types';
 import { PageDto } from 'src/pagination/dto/page.dto';
 import { PageOptionsDto } from 'src/pagination/dto/page-options.dto';
 import { CompanyEntity } from './company.entity';
+import { CompanyService } from './company.service';
 
 @Controller('company')
 export class CompanyController {
@@ -59,5 +60,14 @@ export class CompanyController {
       Number(companyIdToUpdate),
       updateCompanyDto,
     );
+  }
+
+  @Delete(':id')
+  @UseGuards(AuthGuard)
+  async deleteCompany(
+    @User('id') userId: number,
+    @Param('id') companyIdToDelete: string,
+  ): Promise<IMessage> {
+    return this.companyService.deleteCompany(userId, Number(companyIdToDelete));
   }
 }

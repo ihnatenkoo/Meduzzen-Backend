@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 import { CompanyEntity } from './company.entity';
 import { UserEntity } from 'src/user/user.entity';
 import { ICompanyResponse } from './types/company-response.interface';
+import { IMessage } from 'src/types';
 import { PageDto } from 'src/pagination/dto/page.dto';
 import { PageOptionsDto } from 'src/pagination/dto/page-options.dto';
 import { paginate } from 'src/pagination/paginate';
@@ -97,5 +98,25 @@ export class CompanyService {
     const company = await this.companyRepository.save(updatedCompany);
 
     return { company };
+  }
+
+  async deleteCompany(
+    userId: number,
+    companyIdToDelete: number,
+  ): Promise<IMessage> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['ownerCompanies'],
+    });
+
+    if (
+      !user.ownerCompanies.some((company) => company.id === companyIdToDelete)
+    ) {
+      throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
+    }
+
+    await this.companyRepository.delete(companyIdToDelete);
+
+    return { message: `Company deleted successfully` };
   }
 }
