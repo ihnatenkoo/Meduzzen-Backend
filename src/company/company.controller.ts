@@ -11,13 +11,14 @@ import {
   UsePipes,
 } from '@nestjs/common';
 import { AuthGuard } from 'src/guards/auth.guard';
-import { DtoValidationPipe } from 'src/pipes/dtoValidation.pipe';
-import { CreateCompanyDto } from './dto/createCompany.dto';
 import { User } from 'src/decorators/user.decorator';
-import { ICompanyResponse } from './types/company-response.interface';
-import { IMessage } from 'src/types';
+import { DtoValidationPipe } from 'src/pipes/dtoValidation.pipe';
 import { PageDto } from 'src/pagination/dto/page.dto';
 import { PageOptionsDto } from 'src/pagination/dto/page-options.dto';
+import { CreateCompanyDto } from './dto/createCompany.dto';
+import { ChangeVisibilityDto } from './dto/changeVisability.dto';
+import { ICompanyResponse } from './types/company-response.interface';
+import { IMessage } from 'src/types';
 import { CompanyEntity } from './company.entity';
 import { CompanyService } from './company.service';
 
@@ -69,5 +70,20 @@ export class CompanyController {
     @Param('id') companyIdToDelete: string,
   ): Promise<IMessage> {
     return this.companyService.deleteCompany(userId, Number(companyIdToDelete));
+  }
+
+  @Post('change-visibility/:id')
+  @UseGuards(AuthGuard)
+  @UsePipes(new DtoValidationPipe())
+  async changeCompanyVisibility(
+    @User('id') userId: number,
+    @Param('id') companyIdToUpdate: string,
+    @Body() changeVisibilityDto: ChangeVisibilityDto,
+  ): Promise<IMessage> {
+    return this.companyService.changeCompanyVisibility(
+      userId,
+      Number(companyIdToUpdate),
+      changeVisibilityDto,
+    );
   }
 }

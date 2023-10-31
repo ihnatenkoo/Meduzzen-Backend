@@ -12,6 +12,9 @@ export class CompanyEntity {
   @Column()
   description: string;
 
+  @Column({ default: true, select: false })
+  isPublic: boolean;
+
   @ManyToOne(() => UserEntity, (user) => user.ownerCompanies)
   owner: UserEntity;
 }

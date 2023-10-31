@@ -8,6 +8,7 @@ import { ICompanyResponse } from './types/company-response.interface';
 import { IMessage } from 'src/types';
 import { PageDto } from 'src/pagination/dto/page.dto';
 import { PageOptionsDto } from 'src/pagination/dto/page-options.dto';
+import { ChangeVisibilityDto } from './dto/changeVisability.dto';
 import { paginate } from 'src/pagination/paginate';
 import {
   ACCESS_DENIED,
@@ -63,6 +64,7 @@ export class CompanyService {
       name: 'company',
       orderBy: 'company.id',
       query,
+      observeVisibility: true,
       repository: this.companyRepository,
     });
   }
@@ -109,6 +111,10 @@ export class CompanyService {
       relations: ['ownerCompanies'],
     });
 
+    if (!user) {
+      throw new HttpException(USER_NOT_FOUND, HttpStatus.NOT_FOUND);
+    }
+
     if (
       !user.ownerCompanies.some((company) => company.id === companyIdToDelete)
     ) {
@@ -118,5 +124,37 @@ export class CompanyService {
     await this.companyRepository.delete(companyIdToDelete);
 
     return { message: `Company deleted successfully` };
+  }
+
+  async changeCompanyVisibility(
+    userId: number,
+    companyIdToUpdate: number,
+    changeVisibilityDto: ChangeVisibilityDto,
+  ) {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['ownerCompanies'],
+    });
+
+    if (!user) {
+      throw new HttpException(USER_NOT_FOUND, HttpStatus.NOT_FOUND);
+    }
+
+    if (
+      !user.ownerCompanies.some((company) => company.id === companyIdToUpdate)
+    ) {
+      throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
+    }
+
+    const { company } = await this.findCompanyById(companyIdToUpdate);
+
+    const updatedCompany = this.companyRepository.merge(
+      company,
+      changeVisibilityDto,
+    );
+
+    await this.companyRepository.save(updatedCompany);
+
+    return { message: 'Visibility was successfully modified' };
   }
 }

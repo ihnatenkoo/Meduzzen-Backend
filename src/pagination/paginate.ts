@@ -8,6 +8,7 @@ interface IPaginateParams<T> {
   repository: Repository<T>;
   query: PageOptionsDto;
   orderBy: string;
+  observeVisibility?: boolean;
 }
 
 export const paginate = async <T>({
@@ -15,6 +16,7 @@ export const paginate = async <T>({
   orderBy,
   query,
   repository,
+  observeVisibility = false,
 }: IPaginateParams<T>) => {
   const pageOptionsDto = new PageOptionsDto(
     query.page,
@@ -28,6 +30,10 @@ export const paginate = async <T>({
     .orderBy(orderBy, pageOptionsDto.sort)
     .skip(pageOptionsDto.skip)
     .take(pageOptionsDto.limit);
+
+  if (observeVisibility) {
+    queryBuilder.where(`${name}.isPublic = :isPublic`, { isPublic: true });
+  }
 
   const itemCount = await queryBuilder.getCount();
   const { entities } = await queryBuilder.getRawAndEntities();
