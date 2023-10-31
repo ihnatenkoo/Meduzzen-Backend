@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PageOptionsDto } from 'src/pagination/dto/page-options.dto';
@@ -6,7 +6,9 @@ import { PageMetaDto } from 'src/pagination/dto/page-meta.dto';
 import { PageDto } from 'src/pagination/dto/page.dto';
 import { UpdateUserDto } from './dto/updateUser.dto';
 import { IUserResponse } from './types/user-response.interface';
+import { IMessage } from 'src/types';
 import { UserEntity } from './user.entity';
+import { ACCESS_DENIED, USER_NOT_FOUND } from 'src/constants';
 
 @Injectable()
 export class UserService {
@@ -19,7 +21,7 @@ export class UserService {
     const user = await this.userRepository.findOne({ where: { id } });
 
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new HttpException(USER_NOT_FOUND, HttpStatus.NOT_FOUND);
     }
 
     return { user };
@@ -64,7 +66,11 @@ export class UserService {
     return { user };
   }
 
-  async deleteUser(userId: number): Promise<{ message: string }> {
+  async deleteUser(userId: number, userIdToDelete: number): Promise<IMessage> {
+    if (userId !== userIdToDelete) {
+      throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
+    }
+
     const { user } = await this.findUserById(userId);
     await this.userRepository.delete(userId);
 

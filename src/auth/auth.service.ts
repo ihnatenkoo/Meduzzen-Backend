@@ -1,9 +1,5 @@
-import {
-  HttpException,
-  HttpStatus,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { MailerService } from '@nestjs-modules/mailer';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -12,14 +8,21 @@ import { randomBytes } from 'crypto';
 import { CreateUserDto } from 'src/auth/dto/createUser.dto';
 import { UserEntity } from 'src/user/user.entity';
 import { ICreateUserResponse, ITokenPayload, ITokens } from './types';
+import { IMessage } from 'src/types';
 import { LoginDto } from './dto/login.dto';
 import { LoginAuth0Dto } from './dto/loginAuth0.dto';
-
-export const BAD_CREDENTIALS = 'Wrong email or password';
+import { ResetPasswordDto } from './dto/resetPassword.dto';
+import {
+  ACCESS_DENIED,
+  BAD_CREDENTIALS,
+  UNAUTHORIZED,
+  USER_NOT_FOUND,
+} from 'src/constants';
 
 @Injectable()
 export class AuthService {
   constructor(
+    private readonly mailerService: MailerService,
     private readonly jwtService: JwtService,
     @InjectRepository(UserEntity)
     private readonly userRepository: Repository<UserEntity>,
@@ -53,7 +56,7 @@ export class AuthService {
   async login(loginDto: LoginDto): Promise<ITokens> {
     const user = await this.userRepository.findOne({
       where: { email: loginDto.email },
-      select: ['password'],
+      select: ['id', 'email', 'password'],
     });
 
     if (!user) {
@@ -103,7 +106,61 @@ export class AuthService {
         email,
       });
     } catch (e) {
-      throw new UnauthorizedException();
+      throw new HttpException(UNAUTHORIZED, HttpStatus.UNAUTHORIZED);
+    }
+  }
+
+  async initResetPassword(email: string): Promise<IMessage> {
+    const user = await this.userRepository.findOne({
+      where: { email },
+    });
+
+    if (!user) {
+      throw new HttpException(USER_NOT_FOUND, HttpStatus.NOT_FOUND);
+    }
+
+    const { activateToken } = this.generateTokens({ email, id: user.id });
+    const link = `${process.env.CLIENT_URL}/reset-password/${activateToken}`;
+
+    this.mailerService.sendMail({
+      to: email,
+      subject: `Reset Password Request: ${process.env.CLIENT_URL}`,
+      html: `
+					<div>
+						<h1>To reset your password, please click on the following link:</h1>
+						<a href=${link}>${link}</a>
+					<div>
+			`,
+    });
+
+    return { message: 'Reset password initialized' };
+  }
+
+  async resetPassword({
+    token,
+    password,
+  }: ResetPasswordDto): Promise<IMessage> {
+    try {
+      const { id } = this.jwtService.verify(token, {
+        secret: process.env.SECRET_KEY,
+      }) as ITokenPayload;
+
+      const user = await this.userRepository.findOne({ where: { id } });
+
+      if (!user) {
+        throw new HttpException(USER_NOT_FOUND, HttpStatus.NOT_FOUND);
+      }
+
+      const hashPassword = await hash(password, 10);
+      const updatedUser = this.userRepository.merge(user, {
+        password: hashPassword,
+      });
+
+      await this.userRepository.save(updatedUser);
+
+      return { message: 'Password was successfully changed' };
+    } catch (error) {
+      throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
     }
   }
 

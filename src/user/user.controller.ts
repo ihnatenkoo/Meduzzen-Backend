@@ -7,11 +7,13 @@ import {
   Patch,
   Query,
 } from '@nestjs/common';
+import { User } from 'src/decorators/user.decorator';
 import { PageDto } from 'src/pagination/dto/page.dto';
 import { PageOptionsDto } from 'src/pagination/dto/page-options.dto';
 import { UpdateUserDto } from './dto/updateUser.dto';
 import { UserService } from './user.service';
 import { UserEntity } from './user.entity';
+import { IMessage } from 'src/types';
 import { IUserResponse } from './types/user-response.interface';
 
 @Controller('user')
@@ -39,7 +41,10 @@ export class UserController {
   }
 
   @Delete(':id')
-  async deleteUser(@Param('id') userId: number): Promise<{ message: string }> {
-    return this.userService.deleteUser(userId);
+  async deleteUser(
+    @User('id') userId: number,
+    @Param('id') userIdToDelete: string,
+  ): Promise<IMessage> {
+    return this.userService.deleteUser(userId, Number(userIdToDelete));
   }
 }

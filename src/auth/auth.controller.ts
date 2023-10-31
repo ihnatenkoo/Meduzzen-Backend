@@ -5,14 +5,18 @@ import {
   HttpCode,
   Get,
   UseGuards,
+  UsePipes,
 } from '@nestjs/common';
 import { User } from 'src/decorators/user.decorator';
 import { AuthGuard } from 'src/guards/auth.guard';
+import { DtoValidationPipe } from 'src/pipes/dtoValidation.pipe';
 import { CreateUserDto } from 'src/auth/dto/createUser.dto';
 import { IUser } from 'src/user/types/user.interface';
 import { IUserResponse } from 'src/user/types/user-response.interface';
 import { LoginDto } from './dto/login.dto';
 import { LoginAuth0Dto } from './dto/loginAuth0.dto';
+import { ResetPasswordDto } from './dto/resetPassword.dto';
+import { IMessage } from 'src/types';
 import { ICreateUserResponse, ITokens } from './types';
 import { AuthService } from './auth.service';
 
@@ -21,6 +25,7 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
+  @UsePipes(new DtoValidationPipe())
   async createUser(
     @Body() createUserDto: CreateUserDto,
   ): Promise<ICreateUserResponse> {
@@ -28,6 +33,7 @@ export class AuthController {
   }
 
   @Post('login')
+  @UsePipes(new DtoValidationPipe())
   @HttpCode(200)
   async login(@Body() loginDto: LoginDto): Promise<ITokens> {
     return this.authService.login(loginDto);
@@ -43,5 +49,20 @@ export class AuthController {
   @UseGuards(AuthGuard)
   async userInfo(@User() user: IUser): Promise<IUserResponse> {
     return { user };
+  }
+
+  @Post('init-reset-password')
+  @HttpCode(200)
+  async initResetPassword(@Body('email') email: string): Promise<IMessage> {
+    return this.authService.initResetPassword(email);
+  }
+
+  @Post('reset-password')
+  @HttpCode(200)
+  @UsePipes(new DtoValidationPipe())
+  async resetPassword(
+    @Body() resetPasswordDto: ResetPasswordDto,
+  ): Promise<IMessage> {
+    return this.authService.resetPassword(resetPasswordDto);
   }
 }
