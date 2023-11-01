@@ -12,6 +12,7 @@ import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { CompanyModule } from './company/company.module';
 import { InvitationModule } from './invitation/invitation.module';
+import { JoinRequestModule } from './joinRequest/joinRequest.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { InvitationModule } from './invitation/invitation.module';
     AuthModule,
     CompanyModule,
     InvitationModule,
+    JoinRequestModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -1,5 +1,6 @@
 import { CompanyEntity } from 'src/company/company.entity';
 import { InvitationEntity } from 'src/invitation/invitation.entity';
+import { JoinRequestEntity } from 'src/joinRequest/joinRequest.entity';
 import {
   Column,
   Entity,
@@ -36,6 +37,9 @@ export class UserEntity {
 
   @OneToMany(() => InvitationEntity, (invitation) => invitation.recipient)
   receivedInvitations: InvitationEntity[];
+
+  @OneToMany(() => JoinRequestEntity, (joinRequest) => joinRequest.sender)
+  sentJoinRequests: JoinRequestEntity[];
 
   @ManyToMany(() => CompanyEntity, (company) => company.members)
   memberInCompanies: CompanyEntity[];

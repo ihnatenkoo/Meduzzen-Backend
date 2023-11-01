@@ -1,4 +1,5 @@
 import { CompanyEntity } from 'src/company/company.entity';
+import { EInvitationStatus } from 'src/invitation/types/invitation-status';
 import { UserEntity } from 'src/user/user.entity';
 import {
   Entity,
@@ -9,10 +10,9 @@ import {
   UpdateDateColumn,
   JoinColumn,
 } from 'typeorm';
-import { EInvitationStatus } from './types/invitation-status';
 
-@Entity({ name: 'invitations' })
-export class InvitationEntity {
+@Entity({ name: 'join_requests' })
+export class JoinRequestEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -32,17 +32,11 @@ export class InvitationEntity {
   })
   updated_at: Date;
 
-  @ManyToOne(() => UserEntity, (user) => user.sentInvitations)
+  @ManyToOne(() => UserEntity, (user) => user.sentJoinRequests)
   @JoinColumn({ name: 'sender_id' })
   sender: UserEntity;
 
-  @ManyToOne(() => UserEntity, (user) => user.receivedInvitations)
-  @JoinColumn({ name: 'recipient_id' })
-  recipient: UserEntity;
-
-  @ManyToOne(() => CompanyEntity, (company) => company.invitations, {
-    eager: true,
-  })
+  @ManyToOne(() => CompanyEntity, (company) => company.joinRequests)
   @JoinColumn({ name: 'company_id' })
   company: CompanyEntity;
 }
