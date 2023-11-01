@@ -36,7 +36,9 @@ export class JoinRequestEntity {
   @JoinColumn({ name: 'sender_id' })
   sender: UserEntity;
 
-  @ManyToOne(() => CompanyEntity, (company) => company.joinRequests)
+  @ManyToOne(() => CompanyEntity, (company) => company.joinRequests, {
+    eager: true,
+  })
   @JoinColumn({ name: 'company_id' })
   company: CompanyEntity;
 }
