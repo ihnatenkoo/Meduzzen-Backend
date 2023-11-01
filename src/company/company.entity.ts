@@ -1,6 +1,8 @@
 import {
   Column,
   Entity,
+  JoinTable,
+  ManyToMany,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -27,4 +29,8 @@ export class CompanyEntity {
 
   @OneToMany(() => InvitationEntity, (invitation) => invitation.company)
   invitations: InvitationEntity[];
+
+  @ManyToMany(() => UserEntity, (user) => user.memberInCompanies)
+  @JoinTable()
+  members: UserEntity[];
 }

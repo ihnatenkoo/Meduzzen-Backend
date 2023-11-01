@@ -3,9 +3,10 @@ import { Repository } from 'typeorm';
 import { InvitationEntity } from './invitation.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateInvitationDto } from './dto/createInvitation.dto';
-import { UserEntity } from 'src/user/user.entity';
+import { RespondInvitationDto } from './dto/respondInvitation.dto';
 import { IMessage } from 'src/types';
 import { EInvitationStatus } from './types/invitation-status';
+import { UserEntity } from 'src/user/user.entity';
 import { ACCESS_DENIED, USER_NOT_FOUND } from 'src/constants';
 
 @Injectable()
@@ -96,10 +97,50 @@ export class InvitationService {
     return { message: 'Invitation successfully canceled' };
   }
 
+  async respondToInvitation(
+    userId: number,
+    invitationId: number,
+    { respond }: RespondInvitationDto,
+  ): Promise<IMessage> {
+    const recipient = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['receivedInvitations', 'memberInCompanies'],
+    });
+
+    if (!recipient) {
+      throw new HttpException(USER_NOT_FOUND, HttpStatus.NOT_FOUND);
+    }
+
+    const invitation = recipient.receivedInvitations.find(
+      (invitation) => invitation.id === invitationId,
+    );
+
+    if (!invitation) {
+      throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
+    }
+
+    if (invitation.status !== EInvitationStatus.PENDING) {
+      throw new HttpException('Invitation not active', HttpStatus.FORBIDDEN);
+    }
+
+    if (respond === EInvitationStatus.ACCEPTED) {
+      recipient.memberInCompanies.push(invitation.company);
+      await this.userRepository.save(recipient);
+    }
+
+    const updatedInvitation = this.invitationRepository.merge(invitation, {
+      status: respond,
+    });
+
+    await this.invitationRepository.save(updatedInvitation);
+
+    return { message: `Invitation successfully ${respond}` };
+  }
+
   //TODO: for test
   async findAll(): Promise<InvitationEntity[]> {
     return this.invitationRepository.find({
-      relations: ['sender', 'recipient', 'company'],
+      relations: ['sender', 'recipient', 'company', 'company.members'],
     });
   }
 }

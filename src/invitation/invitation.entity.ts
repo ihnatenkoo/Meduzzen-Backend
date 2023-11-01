@@ -21,7 +21,9 @@ export class InvitationEntity {
   @ManyToOne(() => UserEntity, (user) => user.receivedInvitations)
   recipient: UserEntity;
 
-  @ManyToOne(() => CompanyEntity, (company) => company.invitations)
+  @ManyToOne(() => CompanyEntity, (company) => company.invitations, {
+    eager: true,
+  })
   company: CompanyEntity;
 
   @Column({ default: EInvitationStatus.PENDING })

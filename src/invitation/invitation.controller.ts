@@ -12,6 +12,7 @@ import { AuthGuard } from 'src/guards/auth.guard';
 import { DtoValidationPipe } from 'src/pipes/dtoValidation.pipe';
 import { IMessage } from 'src/types';
 import { CreateInvitationDto } from './dto/createInvitation.dto';
+import { RespondInvitationDto } from './dto/respondInvitation.dto';
 import { InvitationEntity } from './invitation.entity';
 import { InvitationService } from './invitation.service';
 
@@ -36,6 +37,21 @@ export class InvitationController {
     @Param('id') invitationId: string,
   ): Promise<IMessage> {
     return this.invitationService.cancelInvitation(userId, +invitationId);
+  }
+
+  @Post('/respond/:id')
+  @UseGuards(AuthGuard)
+  @UsePipes(new DtoValidationPipe())
+  async respondToInvitation(
+    @User('id') userId: number,
+    @Param('id') invitationId: string,
+    @Body() respondDto: RespondInvitationDto,
+  ): Promise<IMessage> {
+    return this.invitationService.respondToInvitation(
+      userId,
+      +invitationId,
+      respondDto,
+    );
   }
 
   //TODO: for test
