@@ -1,4 +1,5 @@
 import { CompanyEntity } from 'src/company/company.entity';
+import { InvitationEntity } from 'src/invitation/invitation.entity';
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity({ name: 'users' })
@@ -23,4 +24,10 @@ export class UserEntity {
 
   @OneToMany(() => CompanyEntity, (company) => company.owner)
   ownerCompanies: CompanyEntity[];
+
+  @OneToMany(() => InvitationEntity, (invitation) => invitation.sender)
+  sentInvitations: InvitationEntity[];
+
+  @OneToMany(() => InvitationEntity, (invitation) => invitation.recipient)
+  receivedInvitations: InvitationEntity[];
 }

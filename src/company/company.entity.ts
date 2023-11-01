@@ -1,5 +1,12 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { UserEntity } from 'src/user/user.entity';
+import { InvitationEntity } from 'src/invitation/invitation.entity';
 
 @Entity({ name: 'companies' })
 export class CompanyEntity {
@@ -17,4 +24,7 @@ export class CompanyEntity {
 
   @ManyToOne(() => UserEntity, (user) => user.ownerCompanies)
   owner: UserEntity;
+
+  @OneToMany(() => InvitationEntity, (invitation) => invitation.company)
+  invitations: InvitationEntity[];
 }
