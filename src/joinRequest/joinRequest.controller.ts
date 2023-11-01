@@ -1,7 +1,17 @@
-import { Controller, Param, Get, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Param,
+  Get,
+  UseGuards,
+  Post,
+  UsePipes,
+  Body,
+} from '@nestjs/common';
 import { User } from 'src/decorators/user.decorator';
 import { AuthGuard } from 'src/guards/auth.guard';
+import { DtoValidationPipe } from 'src/pipes/dtoValidation.pipe';
 import { IMessage } from 'src/types';
+import { RespondJoinRequestDto } from './dto/respondJoinRequest.dto';
 import { JoinRequestService } from './joinRequest.service';
 
 @Controller('join-request')
@@ -24,5 +34,20 @@ export class JoinRequestController {
     @Param('id') companyId: string,
   ): Promise<IMessage> {
     return this.joinRequestService.cancelJoinRequest(userId, +companyId);
+  }
+
+  @Post('respond/:id')
+  @UseGuards(AuthGuard)
+  @UsePipes(new DtoValidationPipe())
+  async respondJoinRequest(
+    @User('id') userId: number,
+    @Param('id') companyId: string,
+    @Body() respondDto: RespondJoinRequestDto,
+  ): Promise<IMessage> {
+    return this.joinRequestService.respondJoinRequest(
+      userId,
+      +companyId,
+      respondDto,
+    );
   }
 }
