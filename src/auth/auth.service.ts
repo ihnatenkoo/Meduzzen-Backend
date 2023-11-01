@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { MailerService } from '@nestjs-modules/mailer';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -6,21 +6,26 @@ import { Repository } from 'typeorm';
 import { compare, hash } from 'bcryptjs';
 import { randomBytes } from 'crypto';
 import { CreateUserDto } from 'src/auth/dto/createUser.dto';
+import { LoginDto } from './dto/login.dto';
+import { LoginAuth0Dto } from './dto/loginAuth0.dto';
 import { UserEntity } from 'src/user/user.entity';
 import { ICreateUserResponse, ITokenPayload, ITokens } from './types';
 import { IMessage } from 'src/types';
-import { LoginDto } from './dto/login.dto';
-import { LoginAuth0Dto } from './dto/loginAuth0.dto';
 import { ResetPasswordDto } from './dto/resetPassword.dto';
 import {
   ACCESS_DENIED,
   BAD_CREDENTIALS,
+  PASSWORD_CHANGED_SUCCESSFULLY,
   UNAUTHORIZED,
+  USER_ALREADY_SIGNUP,
+  USER_CERATED_SUCCESSFULLY,
   USER_NOT_FOUND,
 } from 'src/constants';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly mailerService: MailerService,
     private readonly jwtService: JwtService,
@@ -34,8 +39,12 @@ export class AuthService {
     });
 
     if (existedUser) {
+      this.logger.error(
+        `${USER_ALREADY_SIGNUP}. Email: ${createUserDto.email}`,
+      );
+
       throw new HttpException(
-        'User already signed up',
+        USER_ALREADY_SIGNUP,
         HttpStatus.UNPROCESSABLE_ENTITY,
       );
     }
@@ -47,8 +56,10 @@ export class AuthService {
       password: hashPassword,
     });
 
+    this.logger.log(`${USER_CERATED_SUCCESSFULLY}. Email: ${user.email}`);
+
     return {
-      message: `User created successfully`,
+      message: USER_CERATED_SUCCESSFULLY,
       userId: user.id,
     };
   }
@@ -60,6 +71,8 @@ export class AuthService {
     });
 
     if (!user) {
+      this.logger.error(`${BAD_CREDENTIALS}. User id: ${user.id}`);
+
       throw new HttpException(BAD_CREDENTIALS, HttpStatus.FORBIDDEN);
     }
 
@@ -71,6 +84,8 @@ export class AuthService {
     if (!isPasswordCorrect) {
       throw new HttpException(BAD_CREDENTIALS, HttpStatus.FORBIDDEN);
     }
+
+    this.logger.log(`User log in. Email: ${user.email}`);
 
     return this.generateTokens({ id: user.id, email: user.email });
   }
@@ -133,6 +148,8 @@ export class AuthService {
 			`,
     });
 
+    this.logger.warn(`Initialized reset password for user: ${user.email}`);
+
     return { message: 'Reset password initialized' };
   }
 
@@ -158,7 +175,9 @@ export class AuthService {
 
       await this.userRepository.save(updatedUser);
 
-      return { message: 'Password was successfully changed' };
+      this.logger.warn(`${PASSWORD_CHANGED_SUCCESSFULLY}. User: ${user.email}`);
+
+      return { message: PASSWORD_CHANGED_SUCCESSFULLY };
     } catch (error) {
       throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
     }

@@ -1,17 +1,23 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PageOptionsDto } from 'src/pagination/dto/page-options.dto';
-import { PageMetaDto } from 'src/pagination/dto/page-meta.dto';
 import { PageDto } from 'src/pagination/dto/page.dto';
 import { UpdateUserDto } from './dto/updateUser.dto';
 import { IUserResponse } from './types/user-response.interface';
 import { IMessage } from 'src/types';
 import { UserEntity } from './user.entity';
-import { ACCESS_DENIED, USER_NOT_FOUND } from 'src/constants';
+import { paginate } from 'src/pagination/paginate';
+import {
+  ACCESS_DENIED,
+  USER_DELETED_SUCCESSFULLY,
+  USER_NOT_FOUND,
+} from 'src/constants';
 
 @Injectable()
 export class UserService {
+  private readonly logger = new Logger(UserService.name);
+
   constructor(
     @InjectRepository(UserEntity)
     private readonly userRepository: Repository<UserEntity>,
@@ -27,53 +33,51 @@ export class UserService {
     return { user };
   }
 
-  async getAllUsers({
-    page,
-    limit,
-    sort,
-  }: PageOptionsDto): Promise<PageDto<UserEntity>> {
-    const pageOptionsDto = new PageOptionsDto(page, limit, sort);
-
-    const queryBuilder = this.userRepository.createQueryBuilder('user');
-    queryBuilder
-      .orderBy('user.id', pageOptionsDto.sort)
-      .skip(pageOptionsDto.skip)
-      .take(pageOptionsDto.limit);
-
-    const itemCount = await queryBuilder.getCount();
-    const { entities } = await queryBuilder.getRawAndEntities();
-
-    const pageMetaDto = new PageMetaDto({ itemCount, pageOptionsDto });
-
-    return new PageDto(entities, pageMetaDto);
+  async getAllUsers(query: PageOptionsDto): Promise<PageDto<UserEntity>> {
+    return paginate<UserEntity>({
+      name: 'user',
+      orderBy: 'user.id',
+      query,
+      repository: this.userRepository,
+    });
   }
 
   async updateUser(
     userId: number,
+    userIdToUpdate: number,
     updateUserDto: UpdateUserDto,
   ): Promise<IUserResponse> {
-    const { user: userById } = await this.findUserById(userId);
-    const { name, avatar, bio } = updateUserDto;
+    if (userId !== userIdToUpdate) {
+      this.logger.error(
+        `Access denied! User id: ${userId} try to update user id:${userIdToUpdate}`,
+      );
 
-    const updatedUser = this.userRepository.merge(userById, {
-      name,
-      avatar,
-      bio,
-    });
+      throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
+    }
 
+    const { user: existedUser } = await this.findUserById(userId);
+    const updatedUser = this.userRepository.merge(existedUser, updateUserDto);
     const user = await this.userRepository.save(updatedUser);
+
+    this.logger.log(`User ${user.email} updated successfully`);
 
     return { user };
   }
 
   async deleteUser(userId: number, userIdToDelete: number): Promise<IMessage> {
     if (userId !== userIdToDelete) {
+      this.logger.error(
+        `Access denied! User id: ${userId} try to delete user id:${userIdToDelete}`,
+      );
+
       throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
     }
 
     const { user } = await this.findUserById(userId);
     await this.userRepository.delete(userId);
 
-    return { message: `User id:${user.id} deleted successfully` };
+    this.logger.log(`${USER_DELETED_SUCCESSFULLY}. Email: ${user.email}`);
+
+    return { message: USER_DELETED_SUCCESSFULLY };
   }
 }

@@ -6,7 +6,9 @@ import {
   Param,
   Patch,
   Query,
+  UseGuards,
 } from '@nestjs/common';
+import { AuthGuard } from 'src/guards/auth.guard';
 import { User } from 'src/decorators/user.decorator';
 import { PageDto } from 'src/pagination/dto/page.dto';
 import { PageOptionsDto } from 'src/pagination/dto/page-options.dto';
@@ -33,14 +35,21 @@ export class UserController {
   }
 
   @Patch(':id')
+  @UseGuards(AuthGuard)
   async updateUser(
-    @Param('id') userId: number,
+    @User('id') userId: number,
+    @Param('id') userIdToUpdate: string,
     @Body() updateUserDto: UpdateUserDto,
   ): Promise<IUserResponse> {
-    return this.userService.updateUser(userId, updateUserDto);
+    return this.userService.updateUser(
+      userId,
+      Number(userIdToUpdate),
+      updateUserDto,
+    );
   }
 
   @Delete(':id')
+  @UseGuards(AuthGuard)
   async deleteUser(
     @User('id') userId: number,
     @Param('id') userIdToDelete: string,
