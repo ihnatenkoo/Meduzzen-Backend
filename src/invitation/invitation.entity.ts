@@ -1,6 +1,13 @@
 import { CompanyEntity } from 'src/company/company.entity';
 import { UserEntity } from 'src/user/user.entity';
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import { EInvitationStatus } from './types/invitation-status';
 
 @Entity({ name: 'invitations' })
@@ -19,4 +26,17 @@ export class InvitationEntity {
 
   @Column({ default: EInvitationStatus.PENDING })
   status: EInvitationStatus;
+
+  @CreateDateColumn({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
+  created_at: Date;
+
+  @UpdateDateColumn({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    onUpdate: 'CURRENT_TIMESTAMP',
+  })
+  updated_at: Date;
 }

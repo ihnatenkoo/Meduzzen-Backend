@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Param,
   Post,
   UseGuards,
   UsePipes,
@@ -26,6 +27,15 @@ export class InvitationController {
     @Body() createInvitationDto: CreateInvitationDto,
   ): Promise<IMessage> {
     return this.invitationService.createInvitation(userId, createInvitationDto);
+  }
+
+  @Get(':id')
+  @UseGuards(AuthGuard)
+  async cancelInvitation(
+    @User('id') userId: number,
+    @Param('id') invitationId: string,
+  ): Promise<IMessage> {
+    return this.invitationService.cancelInvitation(userId, +invitationId);
   }
 
   //TODO: for test
