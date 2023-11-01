@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { CreateCompanyDto } from './dto/createCompany.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -12,12 +12,16 @@ import { ChangeVisibilityDto } from './dto/changeVisability.dto';
 import { paginate } from 'src/pagination/paginate';
 import {
   ACCESS_DENIED,
+  COMPANY_DELETED_SUCCESSFULLY,
   COMPANY_NOT_FOUND,
   USER_NOT_FOUND,
+  VISIBILITY_MODIFIED_SUCCESSFULLY,
 } from 'src/constants';
 
 @Injectable()
 export class CompanyService {
+  private readonly logger = new Logger(CompanyService.name);
+
   constructor(
     @InjectRepository(CompanyEntity)
     private readonly companyRepository: Repository<CompanyEntity>,
@@ -41,6 +45,8 @@ export class CompanyService {
       ...createCompanyDto,
       owner: user,
     });
+
+    this.logger.log(`New company created. Name: ${company.name}`);
 
     return { company };
   }
@@ -89,6 +95,10 @@ export class CompanyService {
     if (
       !user.ownerCompanies.some((company) => company.id === companyIdToUpdate)
     ) {
+      this.logger.error(
+        `Access denied! User ${user.email} try to update company id:${companyIdToUpdate}`,
+      );
+
       throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
     }
 
@@ -98,6 +108,8 @@ export class CompanyService {
     );
 
     const company = await this.companyRepository.save(updatedCompany);
+
+    this.logger.log(`Company ${updatedCompany.name} updated successfully`);
 
     return { company };
   }
@@ -118,12 +130,20 @@ export class CompanyService {
     if (
       !user.ownerCompanies.some((company) => company.id === companyIdToDelete)
     ) {
+      this.logger.error(
+        `Access denied! User ${user.email} try to delete company id:${companyIdToDelete}`,
+      );
+
       throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
     }
 
     await this.companyRepository.delete(companyIdToDelete);
 
-    return { message: `Company deleted successfully` };
+    this.logger.log(
+      `${COMPANY_DELETED_SUCCESSFULLY}. Company id: ${companyIdToDelete}`,
+    );
+
+    return { message: COMPANY_DELETED_SUCCESSFULLY };
   }
 
   async changeCompanyVisibility(
@@ -143,6 +163,10 @@ export class CompanyService {
     if (
       !user.ownerCompanies.some((company) => company.id === companyIdToUpdate)
     ) {
+      this.logger.error(
+        `Access denied! User ${user.email} try to change visibility in company id: ${companyIdToUpdate}`,
+      );
+
       throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
     }
 
@@ -155,6 +179,10 @@ export class CompanyService {
 
     await this.companyRepository.save(updatedCompany);
 
-    return { message: 'Visibility was successfully modified' };
+    this.logger.log(
+      `${VISIBILITY_MODIFIED_SUCCESSFULLY}. Company id: ${companyIdToUpdate}`,
+    );
+
+    return { message: VISIBILITY_MODIFIED_SUCCESSFULLY };
   }
 }
