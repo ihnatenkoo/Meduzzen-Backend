@@ -10,6 +10,7 @@ import {
 import { User } from 'src/decorators/user.decorator';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { DtoValidationPipe } from 'src/pipes/dtoValidation.pipe';
+import { IdValidationPipe } from 'src/pipes/idValidationPipe';
 import { IMessage } from 'src/types';
 import { RespondInvitationDto } from 'src/invitation/dto/respondInvitation.dto';
 import { JoinRequestEntity } from './joinRequest.entity';
@@ -31,18 +32,18 @@ export class JoinRequestController {
   @UseGuards(AuthGuard)
   async createJoinRequest(
     @User('id') userId: number,
-    @Param('id') companyId: string,
+    @Param('id', IdValidationPipe) companyId: number,
   ): Promise<IMessage> {
-    return this.joinRequestService.createJoinRequest(userId, +companyId);
+    return this.joinRequestService.createJoinRequest(userId, companyId);
   }
 
   @Get('cancel/:id')
   @UseGuards(AuthGuard)
   async cancelJoinRequest(
     @User('id') userId: number,
-    @Param('id') companyId: string,
+    @Param('id', IdValidationPipe) companyId: number,
   ): Promise<IMessage> {
-    return this.joinRequestService.cancelJoinRequest(userId, +companyId);
+    return this.joinRequestService.cancelJoinRequest(userId, companyId);
   }
 
   @Post('respond/:id')
@@ -50,12 +51,12 @@ export class JoinRequestController {
   @UsePipes(new DtoValidationPipe())
   async respondJoinRequest(
     @User('id') userId: number,
-    @Param('id') joinRequestId: string,
+    @Param('id', IdValidationPipe) joinRequestId: number,
     @Body() respondDto: RespondInvitationDto,
   ): Promise<IMessage> {
     return this.joinRequestService.respondJoinRequest(
       userId,
-      +joinRequestId,
+      joinRequestId,
       respondDto,
     );
   }
