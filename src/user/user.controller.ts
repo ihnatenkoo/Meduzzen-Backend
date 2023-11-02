@@ -7,8 +7,11 @@ import {
   Patch,
   Query,
   UseGuards,
+  UsePipes,
 } from '@nestjs/common';
 import { AuthGuard } from 'src/guards/auth.guard';
+import { DtoValidationPipe } from 'src/pipes/dtoValidation.pipe';
+import { IdValidationPipe } from 'src/pipes/idValidationPipe';
 import { User } from 'src/decorators/user.decorator';
 import { PageDto } from 'src/pagination/dto/page.dto';
 import { PageOptionsDto } from 'src/pagination/dto/page-options.dto';
@@ -30,26 +33,29 @@ export class UserController {
   }
 
   @Get(':id')
-  async findUserById(@Param('id') userId: number): Promise<IUserResponse> {
+  async findUserById(
+    @Param('id', IdValidationPipe) userId: number,
+  ): Promise<IUserResponse> {
     return this.userService.findUserById(userId);
   }
 
   @Patch(':id')
   @UseGuards(AuthGuard)
+  @UsePipes(new DtoValidationPipe())
   async updateUser(
     @User('id') userId: number,
-    @Param('id') userIdToUpdate: string,
+    @Param('id', IdValidationPipe) userIdToUpdate: number,
     @Body() updateUserDto: UpdateUserDto,
   ): Promise<IUserResponse> {
-    return this.userService.updateUser(userId, +userIdToUpdate, updateUserDto);
+    return this.userService.updateUser(userId, userIdToUpdate, updateUserDto);
   }
 
   @Delete(':id')
   @UseGuards(AuthGuard)
   async deleteUser(
     @User('id') userId: number,
-    @Param('id') userIdToDelete: string,
+    @Param('id', IdValidationPipe) userIdToDelete: number,
   ): Promise<IMessage> {
-    return this.userService.deleteUser(userId, +userIdToDelete);
+    return this.userService.deleteUser(userId, userIdToDelete);
   }
 }
