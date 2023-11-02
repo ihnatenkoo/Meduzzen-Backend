@@ -6,14 +6,13 @@ import { JoinRequestEntity } from './joinRequest.entity';
 import { CompanyEntity } from 'src/company/company.entity';
 import { EInvitationStatus } from 'src/invitation/types/invitation-status';
 import { IMessage } from 'src/types';
-import { RespondJoinRequestDto } from './dto/respondJoinRequest.dto';
 import {
   ACCESS_DENIED,
   COMPANY_NOT_FOUND,
   JOIN_REQUEST_CANCELED,
   JOIN_REQUEST_CREATED,
-  USER_NOT_FOUND,
 } from 'src/constants';
+import { RespondInvitationDto } from 'src/invitation/dto/respondInvitation.dto';
 
 @Injectable()
 export class JoinRequestService {
@@ -128,62 +127,40 @@ export class JoinRequestService {
 
   async respondJoinRequest(
     userId: number,
-    companyId: number,
-    respondDto: RespondJoinRequestDto,
+    joinRequestId: number,
+    { respond }: RespondInvitationDto,
   ): Promise<IMessage> {
-    const owner = await this.userRepository.findOne({
-      where: { id: userId },
+    const joinRequest = await this.joinRequestRepository.findOne({
+      where: { id: joinRequestId },
+      relations: ['company.owner', 'sender.memberInCompanies'],
     });
 
-    const candidate = await this.userRepository.findOne({
-      where: { id: respondDto.candidateId },
-    });
-
-    if (!candidate) {
-      throw new HttpException(USER_NOT_FOUND, HttpStatus.NOT_FOUND);
-    }
-
-    const company = await this.companyRepository.findOne({
-      where: { id: companyId },
-      relations: ['owner', 'members', 'joinRequests.sender'],
-    });
-
-    if (!company) {
-      throw new HttpException(COMPANY_NOT_FOUND, HttpStatus.NOT_FOUND);
-    }
-
-    const joinRequest = company.joinRequests.find(
-      (request) =>
-        request.sender.id === respondDto.candidateId &&
-        request.status === EInvitationStatus.PENDING,
-    );
-
-    if (!joinRequest) {
+    if (!joinRequest || joinRequest.status !== EInvitationStatus.PENDING) {
       throw new HttpException('Active request not found', HttpStatus.NOT_FOUND);
     }
 
-    if (company.owner.id !== owner.id) {
+    if (joinRequest.company.owner.id !== userId) {
       this.logger.error(
-        `User ${owner.email} tried to process request in company ${company.id}`,
+        `User id:${userId} tried to process join request where company owner id:${joinRequest.company.owner.id}`,
       );
       throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
     }
 
-    if (respondDto.respond === EInvitationStatus.ACCEPTED) {
-      company.members.push(candidate);
-      await this.companyRepository.save(company);
+    if (respond === EInvitationStatus.ACCEPTED) {
+      joinRequest.sender.memberInCompanies.push(joinRequest.company);
+      await this.userRepository.save(joinRequest.sender);
     }
 
     this.joinRequestRepository.merge(joinRequest, {
-      status: respondDto.respond,
+      status: respond,
     });
 
     await this.joinRequestRepository.save(joinRequest);
 
     this.logger.log(
-      `Request id:${joinRequest.id} status updated to ${respondDto.respond}`,
+      `Request id:${joinRequest.id} status updated to ${respond}`,
     );
 
-    return { message: `User request ${respondDto.respond}` };
+    return { message: `User request ${respond}` };
   }
 }

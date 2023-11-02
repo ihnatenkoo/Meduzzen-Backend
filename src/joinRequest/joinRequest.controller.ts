@@ -11,7 +11,7 @@ import { User } from 'src/decorators/user.decorator';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { DtoValidationPipe } from 'src/pipes/dtoValidation.pipe';
 import { IMessage } from 'src/types';
-import { RespondJoinRequestDto } from './dto/respondJoinRequest.dto';
+import { RespondInvitationDto } from 'src/invitation/dto/respondInvitation.dto';
 import { JoinRequestEntity } from './joinRequest.entity';
 import { JoinRequestService } from './joinRequest.service';
 
@@ -50,12 +50,12 @@ export class JoinRequestController {
   @UsePipes(new DtoValidationPipe())
   async respondJoinRequest(
     @User('id') userId: number,
-    @Param('id') companyId: string,
-    @Body() respondDto: RespondJoinRequestDto,
+    @Param('id') joinRequestId: string,
+    @Body() respondDto: RespondInvitationDto,
   ): Promise<IMessage> {
     return this.joinRequestService.respondJoinRequest(
       userId,
-      +companyId,
+      +joinRequestId,
       respondDto,
     );
   }
