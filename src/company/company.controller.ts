@@ -22,6 +22,7 @@ import { IMessage } from 'src/types';
 import { CompanyEntity } from './company.entity';
 import { UserEntity } from 'src/user/user.entity';
 import { InvitationEntity } from 'src/invitation/invitation.entity';
+import { JoinRequestEntity } from 'src/joinRequest/joinRequest.entity';
 import { CompanyService } from './company.service';
 
 @Controller('company')
@@ -54,6 +55,17 @@ export class CompanyController {
     invitations: InvitationEntity[];
   }> {
     return this.companyService.getInvitations(userId, +companyId);
+  }
+
+  @Get('join-requests/:companyId')
+  @UseGuards(AuthGuard)
+  async getJoinRequests(
+    @User('id') userId: number,
+    @Param('companyId') companyId: string,
+  ): Promise<{
+    joinRequests: JoinRequestEntity[];
+  }> {
+    return this.companyService.getJoinRequests(userId, +companyId);
   }
 
   @Get('members/:companyId')

@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 import { CompanyEntity } from './company.entity';
 import { UserEntity } from 'src/user/user.entity';
 import { InvitationEntity } from 'src/invitation/invitation.entity';
+import { JoinRequestEntity } from 'src/joinRequest/joinRequest.entity';
 import { ICompanyResponse } from './types/company-response.interface';
 import { IMessage } from 'src/types';
 import { PageDto } from 'src/pagination/dto/page.dto';
@@ -88,7 +89,7 @@ export class CompanyService {
       relations: ['ownerCompanies.invitations.sender'],
     });
 
-    if (!user.ownerCompanies) {
+    if (!user) {
       throw new HttpException(USER_NOT_FOUND, HttpStatus.NOT_FOUND);
     }
 
@@ -105,6 +106,36 @@ export class CompanyService {
     }
 
     return { invitations: company.invitations };
+  }
+
+  async getJoinRequests(
+    userId: number,
+    companyId: number,
+  ): Promise<{
+    joinRequests: JoinRequestEntity[];
+  }> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['ownerCompanies.joinRequests.sender'],
+    });
+
+    if (!user) {
+      throw new HttpException(USER_NOT_FOUND, HttpStatus.NOT_FOUND);
+    }
+
+    const company = user.ownerCompanies.find(
+      (company) => company.id === companyId,
+    );
+
+    if (!company) {
+      this.logger.error(
+        `Access denied! User ${user.email} try to get joinRequests in company id:${companyId}`,
+      );
+
+      throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
+    }
+
+    return { joinRequests: company.joinRequests };
   }
 
   async getAllCompanies(
