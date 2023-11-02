@@ -8,7 +8,7 @@ import { ICompanyResponse } from './types/company-response.interface';
 import { IMessage } from 'src/types';
 import { PageDto } from 'src/pagination/dto/page.dto';
 import { PageOptionsDto } from 'src/pagination/dto/page-options.dto';
-import { ChangeVisibilityDto } from './dto/changeVisability.dto';
+import { ChangeVisibilityDto } from './dto/changeVisibility.dto';
 import { paginate } from 'src/pagination/paginate';
 import {
   ACCESS_DENIED,
@@ -225,9 +225,36 @@ export class CompanyService {
     await this.companyRepository.save(company);
 
     this.logger.log(
-      `Member id:${memberId} successfully removed in company id:${company.id}`,
+      `Member id:${memberId} successfully removed from company id:${company.id}`,
     );
 
     return { message: 'Member successfully removed' };
+  }
+
+  async leaveCompany(memberId: number, companyId: number): Promise<IMessage> {
+    const user = await this.userRepository.findOne({
+      where: { id: memberId },
+      relations: ['memberInCompanies'],
+    });
+
+    if (!user) {
+      throw new HttpException(USER_NOT_FOUND, HttpStatus.NOT_FOUND);
+    }
+
+    if (!user.memberInCompanies.some((company) => company.id === companyId)) {
+      throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
+    }
+
+    user.memberInCompanies = user.memberInCompanies.filter(
+      (company) => company.id !== companyId,
+    );
+
+    await this.userRepository.save(user);
+
+    this.logger.log(
+      `Member id:${memberId} successfully left from the company id:${companyId}`,
+    );
+
+    return { message: 'Member successfully left' };
   }
 }

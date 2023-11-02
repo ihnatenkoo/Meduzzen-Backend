@@ -16,7 +16,7 @@ import { DtoValidationPipe } from 'src/pipes/dtoValidation.pipe';
 import { PageDto } from 'src/pagination/dto/page.dto';
 import { PageOptionsDto } from 'src/pagination/dto/page-options.dto';
 import { CreateCompanyDto } from './dto/createCompany.dto';
-import { ChangeVisibilityDto } from './dto/changeVisability.dto';
+import { ChangeVisibilityDto } from './dto/changeVisibility.dto';
 import { ICompanyResponse } from './types/company-response.interface';
 import { IMessage } from 'src/types';
 import { CompanyEntity } from './company.entity';
@@ -95,5 +95,14 @@ export class CompanyController {
     @Param('companyId') companyId: string,
   ): Promise<IMessage> {
     return this.companyService.removeMember(ownerId, +companyId, +memberId);
+  }
+
+  @Delete('leave/:companyId')
+  @UseGuards(AuthGuard)
+  async leaveCompany(
+    @User('id') memberId: number,
+    @Param('companyId') companyId: string,
+  ): Promise<IMessage> {
+    return this.companyService.leaveCompany(memberId, +companyId);
   }
 }
