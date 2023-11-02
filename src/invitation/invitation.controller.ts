@@ -61,10 +61,4 @@ export class InvitationController {
       respondDto,
     );
   }
-
-  //TODO: for test
-  @Get()
-  async findAll(): Promise<InvitationEntity[]> {
-    return this.invitationService.findAll();
-  }
 }

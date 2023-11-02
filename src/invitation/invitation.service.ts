@@ -151,11 +151,4 @@ export class InvitationService {
 
     return { message: `Invitation successfully ${respond}` };
   }
-
-  //TODO: for test
-  async findAll(): Promise<InvitationEntity[]> {
-    return this.invitationRepository.find({
-      relations: ['sender', 'recipient', 'company', 'company.members'],
-    });
-  }
 }
