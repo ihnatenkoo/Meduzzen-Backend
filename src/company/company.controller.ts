@@ -13,6 +13,7 @@ import {
 import { AuthGuard } from 'src/guards/auth.guard';
 import { User } from 'src/decorators/user.decorator';
 import { DtoValidationPipe } from 'src/pipes/dtoValidation.pipe';
+import { IdValidationPipe } from 'src/pipes/idValidationPipe';
 import { PageDto } from 'src/pagination/dto/page.dto';
 import { PageOptionsDto } from 'src/pagination/dto/page-options.dto';
 import { CreateCompanyDto } from './dto/createCompany.dto';
@@ -38,7 +39,7 @@ export class CompanyController {
 
   @Get('admins-list/:companyId')
   @UseGuards(AuthGuard)
-  async getAdminsList(@Param('companyId') companyId: string) {
+  async getAdminsList(@Param('companyId', IdValidationPipe) companyId: string) {
     return this.companyService.getAdminsList(+companyId);
   }
 
@@ -46,45 +47,47 @@ export class CompanyController {
   @UseGuards(AuthGuard)
   async getInvitations(
     @User('id') userId: number,
-    @Param('companyId') companyId: string,
+    @Param('companyId', IdValidationPipe) companyId: number,
   ): Promise<{
     invitations: InvitationEntity[];
   }> {
-    return this.companyService.getInvitations(userId, +companyId);
+    return this.companyService.getInvitations(userId, companyId);
   }
 
   @Get('join-requests/:companyId')
   @UseGuards(AuthGuard)
   async getJoinRequests(
     @User('id') userId: number,
-    @Param('companyId') companyId: string,
+    @Param('companyId', IdValidationPipe) companyId: number,
   ): Promise<{
     joinRequests: JoinRequestEntity[];
   }> {
-    return this.companyService.getJoinRequests(userId, +companyId);
+    return this.companyService.getJoinRequests(userId, companyId);
   }
 
   @Get('members/:companyId')
   @UseGuards(AuthGuard)
   async getAllMembers(
-    @Param('companyId') companyId: string,
+    @Param('companyId', IdValidationPipe) companyId: number,
   ): Promise<{ members: UserEntity[] }> {
-    return this.companyService.getAllMembers(+companyId);
+    return this.companyService.getAllMembers(companyId);
   }
 
   @Get(':companyId/add-admin/:adminId')
   @UseGuards(AuthGuard)
   async addAdmin(
     @User('id') ownerId: number,
-    @Param('companyId') companyId: string,
-    @Param('adminId') adminId: string,
+    @Param('companyId', IdValidationPipe) companyId: number,
+    @Param('adminId', IdValidationPipe) adminId: number,
   ): Promise<IMessage> {
-    return this.companyService.addAdmin(ownerId, +companyId, +adminId);
+    return this.companyService.addAdmin(ownerId, companyId, adminId);
   }
 
   @Get(':id')
   @UseGuards(AuthGuard)
-  async findCompanyById(@Param('id') id: number): Promise<ICompanyResponse> {
+  async findCompanyById(
+    @Param('id', IdValidationPipe) id: number,
+  ): Promise<ICompanyResponse> {
     return this.companyService.findCompanyById(id);
   }
 
@@ -103,12 +106,12 @@ export class CompanyController {
   @UsePipes(new DtoValidationPipe())
   async changeCompanyVisibility(
     @User('id') userId: number,
-    @Param('id') companyIdToUpdate: string,
+    @Param('id', IdValidationPipe) companyIdToUpdate: number,
     @Body() changeVisibilityDto: ChangeVisibilityDto,
   ): Promise<IMessage> {
     return this.companyService.changeCompanyVisibility(
       userId,
-      +companyIdToUpdate,
+      companyIdToUpdate,
       changeVisibilityDto,
     );
   }
@@ -118,12 +121,12 @@ export class CompanyController {
   @UsePipes(new DtoValidationPipe())
   async updateCompany(
     @User('id') userId: number,
-    @Param('id') companyIdToUpdate: string,
+    @Param('id', IdValidationPipe) companyIdToUpdate: number,
     @Body() updateCompanyDto: CreateCompanyDto,
   ): Promise<ICompanyResponse> {
     return this.companyService.updateCompany(
       userId,
-      +companyIdToUpdate,
+      companyIdToUpdate,
       updateCompanyDto,
     );
   }
@@ -132,37 +135,37 @@ export class CompanyController {
   @UseGuards(AuthGuard)
   async removeMember(
     @User('id') ownerId: number,
-    @Param('memberId') memberId: string,
-    @Param('companyId') companyId: string,
+    @Param('memberId', IdValidationPipe) memberId: number,
+    @Param('companyId', IdValidationPipe) companyId: number,
   ): Promise<IMessage> {
-    return this.companyService.removeMember(ownerId, +companyId, +memberId);
+    return this.companyService.removeMember(ownerId, companyId, memberId);
   }
 
   @Delete(':companyId/admin/:adminId')
   @UseGuards(AuthGuard)
   async removeAdmin(
     @User('id') ownerId: number,
-    @Param('adminId') adminId: string,
-    @Param('companyId') companyId: string,
+    @Param('adminId', IdValidationPipe) adminId: number,
+    @Param('companyId', IdValidationPipe) companyId: number,
   ): Promise<IMessage> {
-    return this.companyService.removeAdmin(ownerId, +companyId, +adminId);
+    return this.companyService.removeAdmin(ownerId, companyId, adminId);
   }
 
   @Delete('leave/:companyId')
   @UseGuards(AuthGuard)
   async leaveCompany(
     @User('id') memberId: number,
-    @Param('companyId') companyId: string,
+    @Param('companyId', IdValidationPipe) companyId: number,
   ): Promise<IMessage> {
-    return this.companyService.leaveCompany(memberId, +companyId);
+    return this.companyService.leaveCompany(memberId, companyId);
   }
 
   @Delete(':id')
   @UseGuards(AuthGuard)
   async deleteCompany(
     @User('id') userId: number,
-    @Param('id') companyIdToDelete: string,
+    @Param('id', IdValidationPipe) companyIdToDelete: number,
   ): Promise<IMessage> {
-    return this.companyService.deleteCompany(userId, +companyIdToDelete);
+    return this.companyService.deleteCompany(userId, companyIdToDelete);
   }
 }
