@@ -86,4 +86,14 @@ export class CompanyController {
       changeVisibilityDto,
     );
   }
+
+  @Delete(':companyId/member/:memberId')
+  @UseGuards(AuthGuard)
+  async removeMember(
+    @User('id') ownerId: number,
+    @Param('memberId') memberId: string,
+    @Param('companyId') companyId: string,
+  ): Promise<IMessage> {
+    return this.companyService.removeMember(ownerId, +companyId, +memberId);
+  }
 }

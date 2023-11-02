@@ -140,7 +140,7 @@ export class CompanyService {
     await this.companyRepository.delete(companyIdToDelete);
 
     this.logger.log(
-      `${COMPANY_DELETED_SUCCESSFULLY}. Company id: ${companyIdToDelete}`,
+      `${COMPANY_DELETED_SUCCESSFULLY}. Company id:${companyIdToDelete}`,
     );
 
     return { message: COMPANY_DELETED_SUCCESSFULLY };
@@ -164,7 +164,7 @@ export class CompanyService {
       !user.ownerCompanies.some((company) => company.id === companyIdToUpdate)
     ) {
       this.logger.error(
-        `Access denied! User ${user.email} try to change visibility in company id: ${companyIdToUpdate}`,
+        `Access denied! User ${user.email} try to change visibility in company id:${companyIdToUpdate}`,
       );
 
       throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
@@ -180,9 +180,54 @@ export class CompanyService {
     await this.companyRepository.save(updatedCompany);
 
     this.logger.log(
-      `${VISIBILITY_MODIFIED_SUCCESSFULLY}. Company id: ${companyIdToUpdate}`,
+      `${VISIBILITY_MODIFIED_SUCCESSFULLY}. Company id:${companyIdToUpdate}`,
     );
 
     return { message: VISIBILITY_MODIFIED_SUCCESSFULLY };
+  }
+
+  async removeMember(
+    ownerId: number,
+    companyId: number,
+    memberId: number,
+  ): Promise<IMessage> {
+    const user = await this.userRepository.findOne({
+      where: { id: ownerId },
+      relations: ['ownerCompanies.members'],
+    });
+
+    if (!user) {
+      throw new HttpException(USER_NOT_FOUND, HttpStatus.NOT_FOUND);
+    }
+
+    const company = user.ownerCompanies.find(
+      (company) => company.id === companyId,
+    );
+
+    if (!company) {
+      this.logger.error(
+        `Access denied! User ${user.email} try to remove user in company id: ${companyId}`,
+      );
+
+      throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
+    }
+
+    const member = company.members.find((member) => member.id === memberId);
+
+    if (!member) {
+      throw new HttpException('Member not found', HttpStatus.NOT_FOUND);
+    }
+
+    company.members = company.members.filter(
+      (member) => member.id !== memberId,
+    );
+
+    await this.companyRepository.save(company);
+
+    this.logger.log(
+      `Member id:${memberId} successfully removed in company id:${company.id}`,
+    );
+
+    return { message: 'Member successfully removed' };
   }
 }
