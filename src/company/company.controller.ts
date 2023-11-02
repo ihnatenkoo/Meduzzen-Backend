@@ -20,6 +20,7 @@ import { ChangeVisibilityDto } from './dto/changeVisibility.dto';
 import { ICompanyResponse } from './types/company-response.interface';
 import { IMessage } from 'src/types';
 import { CompanyEntity } from './company.entity';
+import { UserEntity } from 'src/user/user.entity';
 import { CompanyService } from './company.service';
 
 @Controller('company')
@@ -43,7 +44,16 @@ export class CompanyController {
     return this.companyService.getAllCompanies(query);
   }
 
+  @Get('members/:companyId')
+  @UseGuards(AuthGuard)
+  async getAllMembers(
+    @Param('companyId') companyId: string,
+  ): Promise<{ members: UserEntity[] }> {
+    return this.companyService.getAllMembers(+companyId);
+  }
+
   @Get(':id')
+  @UseGuards(AuthGuard)
   async findCompanyById(@Param('id') id: number): Promise<ICompanyResponse> {
     return this.companyService.findCompanyById(id);
   }

@@ -63,6 +63,19 @@ export class CompanyService {
     return { company };
   }
 
+  async getAllMembers(companyId: number): Promise<{ members: UserEntity[] }> {
+    const company = await this.companyRepository.findOne({
+      where: { id: companyId },
+      relations: ['members'],
+    });
+
+    if (!company) {
+      throw new HttpException(COMPANY_NOT_FOUND, HttpStatus.NOT_FOUND);
+    }
+
+    return { members: company.members };
+  }
+
   async getAllCompanies(
     query: PageOptionsDto,
   ): Promise<PageDto<CompanyEntity>> {
