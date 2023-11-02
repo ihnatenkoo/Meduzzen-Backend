@@ -41,11 +41,7 @@ export class UserController {
     @Param('id') userIdToUpdate: string,
     @Body() updateUserDto: UpdateUserDto,
   ): Promise<IUserResponse> {
-    return this.userService.updateUser(
-      userId,
-      Number(userIdToUpdate),
-      updateUserDto,
-    );
+    return this.userService.updateUser(userId, +userIdToUpdate, updateUserDto);
   }
 
   @Delete(':id')
@@ -54,6 +50,6 @@ export class UserController {
     @User('id') userId: number,
     @Param('id') userIdToDelete: string,
   ): Promise<IMessage> {
-    return this.userService.deleteUser(userId, Number(userIdToDelete));
+    return this.userService.deleteUser(userId, +userIdToDelete);
   }
 }

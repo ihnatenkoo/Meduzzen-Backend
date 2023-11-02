@@ -16,7 +16,6 @@ import {
   ACCESS_DENIED,
   COMPANY_DELETED_SUCCESSFULLY,
   COMPANY_NOT_FOUND,
-  USER_NOT_FOUND,
   VISIBILITY_MODIFIED_SUCCESSFULLY,
 } from 'src/constants';
 
@@ -38,10 +37,6 @@ export class CompanyService {
     const user = await this.userRepository.findOne({
       where: { id: userId },
     });
-
-    if (!user) {
-      throw new HttpException(USER_NOT_FOUND, HttpStatus.NOT_FOUND);
-    }
 
     const company = await this.companyRepository.save({
       ...createCompanyDto,
@@ -89,10 +84,6 @@ export class CompanyService {
       relations: ['ownerCompanies.invitations.sender'],
     });
 
-    if (!user) {
-      throw new HttpException(USER_NOT_FOUND, HttpStatus.NOT_FOUND);
-    }
-
     const company = user.ownerCompanies.find(
       (company) => company.id === companyId,
     );
@@ -118,10 +109,6 @@ export class CompanyService {
       where: { id: userId },
       relations: ['ownerCompanies.joinRequests.sender'],
     });
-
-    if (!user) {
-      throw new HttpException(USER_NOT_FOUND, HttpStatus.NOT_FOUND);
-    }
 
     const company = user.ownerCompanies.find(
       (company) => company.id === companyId,
@@ -160,10 +147,6 @@ export class CompanyService {
       relations: ['ownerCompanies'],
     });
 
-    if (!user) {
-      throw new HttpException(USER_NOT_FOUND, HttpStatus.NOT_FOUND);
-    }
-
     const { company: existedCompany } =
       await this.findCompanyById(companyIdToUpdate);
 
@@ -198,10 +181,6 @@ export class CompanyService {
       relations: ['ownerCompanies'],
     });
 
-    if (!user) {
-      throw new HttpException(USER_NOT_FOUND, HttpStatus.NOT_FOUND);
-    }
-
     if (
       !user.ownerCompanies.some((company) => company.id === companyIdToDelete)
     ) {
@@ -230,10 +209,6 @@ export class CompanyService {
       where: { id: userId },
       relations: ['ownerCompanies'],
     });
-
-    if (!user) {
-      throw new HttpException(USER_NOT_FOUND, HttpStatus.NOT_FOUND);
-    }
 
     if (
       !user.ownerCompanies.some((company) => company.id === companyIdToUpdate)
@@ -271,10 +246,6 @@ export class CompanyService {
       relations: ['ownerCompanies.members'],
     });
 
-    if (!user) {
-      throw new HttpException(USER_NOT_FOUND, HttpStatus.NOT_FOUND);
-    }
-
     const company = user.ownerCompanies.find(
       (company) => company.id === companyId,
     );
@@ -311,10 +282,6 @@ export class CompanyService {
       where: { id: memberId },
       relations: ['memberInCompanies'],
     });
-
-    if (!user) {
-      throw new HttpException(USER_NOT_FOUND, HttpStatus.NOT_FOUND);
-    }
 
     if (!user.memberInCompanies.some((company) => company.id === companyId)) {
       throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);

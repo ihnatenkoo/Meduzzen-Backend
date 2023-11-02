@@ -26,10 +26,6 @@ export class InvitationService {
       relations: ['receivedInvitations'],
     });
 
-    if (!user) {
-      throw new HttpException(USER_NOT_FOUND, HttpStatus.NOT_FOUND);
-    }
-
     return { invitations: user.receivedInvitations };
   }
 
@@ -41,10 +37,6 @@ export class InvitationService {
       where: { id: userId },
       relations: ['ownerCompanies'],
     });
-
-    if (!sender) {
-      throw new HttpException(USER_NOT_FOUND, HttpStatus.NOT_FOUND);
-    }
 
     const company = sender.ownerCompanies.find(
       (company) => company.id === companyId,
@@ -91,10 +83,6 @@ export class InvitationService {
       relations: ['sentInvitations'],
     });
 
-    if (!sender) {
-      throw new HttpException(USER_NOT_FOUND, HttpStatus.NOT_FOUND);
-    }
-
     const invitation = sender.sentInvitations.find(
       (invitation) => invitation.id === invitationId,
     );
@@ -121,10 +109,6 @@ export class InvitationService {
       where: { id: userId },
       relations: ['receivedInvitations', 'memberInCompanies'],
     });
-
-    if (!recipient) {
-      throw new HttpException(USER_NOT_FOUND, HttpStatus.NOT_FOUND);
-    }
 
     const invitation = recipient.receivedInvitations.find(
       (invitation) => invitation.id === invitationId,

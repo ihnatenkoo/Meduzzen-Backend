@@ -92,7 +92,7 @@ export class CompanyController {
   ): Promise<ICompanyResponse> {
     return this.companyService.updateCompany(
       userId,
-      Number(companyIdToUpdate),
+      +companyIdToUpdate,
       updateCompanyDto,
     );
   }
@@ -103,7 +103,7 @@ export class CompanyController {
     @User('id') userId: number,
     @Param('id') companyIdToDelete: string,
   ): Promise<IMessage> {
-    return this.companyService.deleteCompany(userId, Number(companyIdToDelete));
+    return this.companyService.deleteCompany(userId, +companyIdToDelete);
   }
 
   @Post('change-visibility/:id')
@@ -116,7 +116,7 @@ export class CompanyController {
   ): Promise<IMessage> {
     return this.companyService.changeCompanyVisibility(
       userId,
-      Number(companyIdToUpdate),
+      +companyIdToUpdate,
       changeVisibilityDto,
     );
   }

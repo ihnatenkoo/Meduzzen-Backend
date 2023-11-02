@@ -36,10 +36,6 @@ export class JoinRequestService {
       relations: ['sentJoinRequests'],
     });
 
-    if (!user) {
-      throw new HttpException(USER_NOT_FOUND, HttpStatus.NOT_FOUND);
-    }
-
     return { joinRequests: user.sentJoinRequests };
   }
 
@@ -51,10 +47,6 @@ export class JoinRequestService {
       where: { id: userId },
       relations: ['sentJoinRequests'],
     });
-
-    if (!sender) {
-      throw new HttpException(USER_NOT_FOUND, HttpStatus.NOT_FOUND);
-    }
 
     const company = await this.companyRepository.findOne({
       where: { id: companyId },
@@ -103,10 +95,6 @@ export class JoinRequestService {
       relations: ['sentJoinRequests'],
     });
 
-    if (!sender) {
-      throw new HttpException(USER_NOT_FOUND, HttpStatus.NOT_FOUND);
-    }
-
     const company = await this.companyRepository.findOne({
       where: { id: companyId },
     });
@@ -146,10 +134,6 @@ export class JoinRequestService {
     const owner = await this.userRepository.findOne({
       where: { id: userId },
     });
-
-    if (!owner) {
-      throw new HttpException(USER_NOT_FOUND, HttpStatus.NOT_FOUND);
-    }
 
     const candidate = await this.userRepository.findOne({
       where: { id: respondDto.candidateId },
