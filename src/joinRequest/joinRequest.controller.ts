@@ -12,11 +12,20 @@ import { AuthGuard } from 'src/guards/auth.guard';
 import { DtoValidationPipe } from 'src/pipes/dtoValidation.pipe';
 import { IMessage } from 'src/types';
 import { RespondJoinRequestDto } from './dto/respondJoinRequest.dto';
+import { JoinRequestEntity } from './joinRequest.entity';
 import { JoinRequestService } from './joinRequest.service';
 
 @Controller('join-request')
 export class JoinRequestController {
   constructor(private readonly joinRequestService: JoinRequestService) {}
+
+  @Get('list')
+  @UseGuards(AuthGuard)
+  async getJoinRequestsList(@User('id') userId: number): Promise<{
+    joinRequests: JoinRequestEntity[];
+  }> {
+    return this.joinRequestService.getJoinRequestsList(userId);
+  }
 
   @Get('create/:id')
   @UseGuards(AuthGuard)

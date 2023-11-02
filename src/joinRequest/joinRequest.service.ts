@@ -28,6 +28,21 @@ export class JoinRequestService {
     private readonly companyRepository: Repository<CompanyEntity>,
   ) {}
 
+  async getJoinRequestsList(userId: number): Promise<{
+    joinRequests: JoinRequestEntity[];
+  }> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['sentJoinRequests'],
+    });
+
+    if (!user) {
+      throw new HttpException(USER_NOT_FOUND, HttpStatus.NOT_FOUND);
+    }
+
+    return { joinRequests: user.sentJoinRequests };
+  }
+
   async createJoinRequest(
     userId: number,
     companyId: number,
