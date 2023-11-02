@@ -30,6 +30,14 @@ export class InvitationController {
     return this.invitationService.createInvitation(userId, createInvitationDto);
   }
 
+  @Get('list')
+  @UseGuards(AuthGuard)
+  async getInvitations(
+    @User('id') userId: number,
+  ): Promise<{ invitations: InvitationEntity[] }> {
+    return this.invitationService.getInvitations(userId);
+  }
+
   @Get(':id')
   @UseGuards(AuthGuard)
   async cancelInvitation(

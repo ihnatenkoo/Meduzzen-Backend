@@ -18,6 +18,21 @@ export class InvitationService {
     private readonly userRepository: Repository<UserEntity>,
   ) {}
 
+  async getInvitations(
+    userId: number,
+  ): Promise<{ invitations: InvitationEntity[] }> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['receivedInvitations'],
+    });
+
+    if (!user) {
+      throw new HttpException(USER_NOT_FOUND, HttpStatus.NOT_FOUND);
+    }
+
+    return { invitations: user.receivedInvitations };
+  }
+
   async createInvitation(
     userId: number,
     { companyId, recipientId }: CreateInvitationDto,
