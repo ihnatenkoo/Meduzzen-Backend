@@ -4,6 +4,7 @@ import { JoinRequestEntity } from 'src/joinRequest/joinRequest.entity';
 import {
   Column,
   Entity,
+  JoinTable,
   ManyToMany,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -43,4 +44,8 @@ export class UserEntity {
 
   @ManyToMany(() => CompanyEntity, (company) => company.members)
   memberInCompanies: CompanyEntity[];
+
+  @ManyToMany(() => CompanyEntity, (company) => company.admins)
+  @JoinTable()
+  adminInCompanies: CompanyEntity[];
 }
