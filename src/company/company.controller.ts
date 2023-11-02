@@ -36,6 +36,12 @@ export class CompanyController {
     return this.companyService.getAllCompanies(query);
   }
 
+  @Get('admins-list/:companyId')
+  @UseGuards(AuthGuard)
+  async getAdminsList(@Param('companyId') companyId: string) {
+    return this.companyService.getAdminsList(+companyId);
+  }
+
   @Get('invitations/:companyId')
   @UseGuards(AuthGuard)
   async getInvitations(

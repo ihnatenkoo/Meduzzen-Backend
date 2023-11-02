@@ -137,6 +137,19 @@ export class CompanyService {
     });
   }
 
+  async getAdminsList(companyId: number) {
+    const company = await this.companyRepository.findOne({
+      where: { id: companyId },
+      relations: ['admins'],
+    });
+
+    if (!company) {
+      throw new HttpException(COMPANY_NOT_FOUND, HttpStatus.NOT_FOUND);
+    }
+
+    return { admins: company.admins };
+  }
+
   async updateCompany(
     userId: number,
     companyIdToUpdate: number,
