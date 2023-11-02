@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CompanyEntity } from './company.entity';
 import { UserEntity } from 'src/user/user.entity';
+import { InvitationEntity } from 'src/invitation/invitation.entity';
 import { ICompanyResponse } from './types/company-response.interface';
 import { IMessage } from 'src/types';
 import { PageDto } from 'src/pagination/dto/page.dto';
@@ -74,6 +75,36 @@ export class CompanyService {
     }
 
     return { members: company.members };
+  }
+
+  async getInvitations(
+    userId: number,
+    companyId: number,
+  ): Promise<{
+    invitations: InvitationEntity[];
+  }> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['ownerCompanies.invitations.sender'],
+    });
+
+    if (!user.ownerCompanies) {
+      throw new HttpException(USER_NOT_FOUND, HttpStatus.NOT_FOUND);
+    }
+
+    const company = user.ownerCompanies.find(
+      (company) => company.id === companyId,
+    );
+
+    if (!company) {
+      this.logger.error(
+        `Access denied! User ${user.email} try to get invitations in company id:${companyId}`,
+      );
+
+      throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
+    }
+
+    return { invitations: company.invitations };
   }
 
   async getAllCompanies(

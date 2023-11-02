@@ -21,6 +21,7 @@ import { ICompanyResponse } from './types/company-response.interface';
 import { IMessage } from 'src/types';
 import { CompanyEntity } from './company.entity';
 import { UserEntity } from 'src/user/user.entity';
+import { InvitationEntity } from 'src/invitation/invitation.entity';
 import { CompanyService } from './company.service';
 
 @Controller('company')
@@ -42,6 +43,17 @@ export class CompanyController {
     @Query() query: PageOptionsDto,
   ): Promise<PageDto<CompanyEntity>> {
     return this.companyService.getAllCompanies(query);
+  }
+
+  @Get('invitations/:companyId')
+  @UseGuards(AuthGuard)
+  async getInvitations(
+    @User('id') userId: number,
+    @Param('companyId') companyId: string,
+  ): Promise<{
+    invitations: InvitationEntity[];
+  }> {
+    return this.companyService.getInvitations(userId, +companyId);
   }
 
   @Get('members/:companyId')
