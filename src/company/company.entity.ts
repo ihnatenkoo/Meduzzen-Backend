@@ -39,4 +39,7 @@ export class CompanyEntity {
   @ManyToMany(() => UserEntity, (user) => user.memberInCompanies)
   @JoinTable()
   members: UserEntity[];
+
+  @ManyToMany(() => UserEntity, (user) => user.adminInCompanies)
+  admins: UserEntity[];
 }

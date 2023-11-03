@@ -137,6 +137,21 @@ export class CompanyService {
     });
   }
 
+  async getAdminsList(companyId: number): Promise<{
+    admins: UserEntity[];
+  }> {
+    const company = await this.companyRepository.findOne({
+      where: { id: companyId },
+      relations: ['admins'],
+    });
+
+    if (!company) {
+      throw new HttpException(COMPANY_NOT_FOUND, HttpStatus.NOT_FOUND);
+    }
+
+    return { admins: company.admins };
+  }
+
   async updateCompany(
     userId: number,
     companyIdToUpdate: number,
@@ -252,7 +267,7 @@ export class CompanyService {
 
     if (!company) {
       this.logger.error(
-        `Access denied! User ${user.email} try to remove user in company id: ${companyId}`,
+        `Access denied! User ${user.email} try to remove user in company id:${companyId}`,
       );
 
       throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
@@ -277,6 +292,45 @@ export class CompanyService {
     return { message: 'Member successfully removed' };
   }
 
+  async removeAdmin(
+    ownerId: number,
+    companyId: number,
+    adminId: number,
+  ): Promise<IMessage> {
+    const user = await this.userRepository.findOne({
+      where: { id: ownerId },
+      relations: ['ownerCompanies.admins'],
+    });
+
+    const company = user.ownerCompanies.find(
+      (company) => company.id === companyId,
+    );
+
+    if (!company) {
+      this.logger.error(
+        `Access denied! User ${user.email} try to remove admin in company id:${companyId}`,
+      );
+
+      throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
+    }
+
+    const admin = company.admins.find((admin) => admin.id === adminId);
+
+    if (!admin) {
+      throw new HttpException('User is not admin', HttpStatus.BAD_REQUEST);
+    }
+
+    company.admins = company.admins.filter((admin) => admin.id !== adminId);
+
+    await this.companyRepository.save(company);
+
+    this.logger.log(
+      `Admin id:${adminId} successfully removed from admins in company id:${company.id}`,
+    );
+
+    return { message: 'Admin successfully removed' };
+  }
+
   async leaveCompany(memberId: number, companyId: number): Promise<IMessage> {
     const user = await this.userRepository.findOne({
       where: { id: memberId },
@@ -298,5 +352,49 @@ export class CompanyService {
     );
 
     return { message: 'Member successfully left' };
+  }
+
+  async addAdmin(
+    ownerId: number,
+    companyId: number,
+    adminId: number,
+  ): Promise<IMessage> {
+    const owner = await this.userRepository.findOne({
+      where: { id: ownerId },
+      relations: ['ownerCompanies.members', 'ownerCompanies.admins'],
+    });
+
+    const company = owner.ownerCompanies.find(
+      (company) => company.id === companyId,
+    );
+
+    if (!company) {
+      throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
+    }
+
+    const candidate = company.members.find((member) => member.id === adminId);
+
+    if (!candidate) {
+      throw new HttpException(
+        'User is not a member of your company',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    if (company.admins.some((admin) => admin.id === candidate.id)) {
+      throw new HttpException(
+        'User is already an administrator',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    company.admins.push(candidate);
+    await this.companyRepository.save(company);
+
+    this.logger.log(
+      `User ${candidate.email} successfully added to admins in company id:${company.id}`,
+    );
+
+    return { message: 'User successfully added to admins' };
   }
 }
