@@ -40,6 +40,8 @@ export class QuizService {
 
     const quiz = await this.quizRepository.save({ ...createQuizDto, company });
 
+    this.logger.log(`Quiz id:${quiz.id} created`);
+
     delete quiz.company;
 
     return { quiz };
@@ -73,6 +75,8 @@ export class QuizService {
 
     const updatedQuiz = await this.quizRepository.save(quiz);
 
+    this.logger.log(`Quiz id:${quiz.id} updated`);
+
     delete updatedQuiz.company;
 
     return { quiz: updatedQuiz };
@@ -99,6 +103,8 @@ export class QuizService {
     }
 
     await this.quizRepository.delete(quizId);
+
+    this.logger.log(`Quiz id:${quiz.id} deleted`);
 
     return { message: 'Quiz deleted successfully' };
   }
