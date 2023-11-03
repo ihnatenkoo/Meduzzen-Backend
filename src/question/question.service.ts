@@ -4,6 +4,7 @@ import { QuestionEntity } from './question.entity';
 import { Repository } from 'typeorm';
 import { CreateQuestionDto } from './dto/createQuestion.dto';
 import { QuizEntity } from 'src/quiz/quiz.entity';
+import { IMessage } from 'src/types';
 import { isUserAdmin } from 'src/utils/isUserAdmin';
 import { ACCESS_DENIED } from 'src/constants';
 
@@ -81,5 +82,29 @@ export class QuestionService {
     delete updatedQuestion.quiz;
 
     return { question: updatedQuestion };
+  }
+
+  async deleteQuestion(userId: number, questionId: number): Promise<IMessage> {
+    const question = await this.questionRepository.findOne({
+      where: { id: questionId },
+      relations: ['quiz.company.owner', 'quiz.company.admins'],
+    });
+
+    if (!question) {
+      throw new HttpException('Question not found', HttpStatus.NOT_FOUND);
+    }
+
+    if (!isUserAdmin(userId, question.quiz.company)) {
+      this.logger.error(
+        `User id:${userId} tried to delete question in quiz id:${question.quiz.id}`,
+      );
+      throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
+    }
+
+    await this.questionRepository.delete(questionId);
+
+    this.logger.log(`Question id:${questionId} deleted`);
+
+    return { message: 'Question deleted successfully' };
   }
 }

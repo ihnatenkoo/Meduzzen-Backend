@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Param,
   Patch,
   Post,
@@ -12,6 +13,7 @@ import { AuthGuard } from 'src/guards/auth.guard';
 import { DtoValidationPipe } from 'src/pipes/dtoValidation.pipe';
 import { IdValidationPipe } from 'src/pipes/idValidationPipe';
 import { CreateQuestionDto } from './dto/createQuestion.dto';
+import { IMessage } from 'src/types';
 import { QuestionEntity } from './question.entity';
 import { QuestionService } from './question.service';
 
@@ -47,5 +49,14 @@ export class QuestionController {
       questionId,
       updateQuestionDto,
     );
+  }
+
+  @Delete(':id')
+  @UseGuards(AuthGuard)
+  async deleteQuestion(
+    @User('id') userId: number,
+    @Param('id', IdValidationPipe) questionId: number,
+  ): Promise<IMessage> {
+    return this.questionService.deleteQuestion(userId, questionId);
   }
 }
