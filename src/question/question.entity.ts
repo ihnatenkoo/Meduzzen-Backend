@@ -9,7 +9,7 @@ export class QuestionEntity {
   @Column()
   question: string;
 
-  @Column({ type: 'jsonb', array: true, default: [] })
+  @Column({ type: 'text', array: true, default: [] })
   answers: string[];
 
   @Column()
