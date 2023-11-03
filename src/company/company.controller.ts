@@ -39,8 +39,12 @@ export class CompanyController {
 
   @Get('admins-list/:companyId')
   @UseGuards(AuthGuard)
-  async getAdminsList(@Param('companyId', IdValidationPipe) companyId: string) {
-    return this.companyService.getAdminsList(+companyId);
+  async getAdminsList(
+    @Param('companyId', IdValidationPipe) companyId: number,
+  ): Promise<{
+    admins: UserEntity[];
+  }> {
+    return this.companyService.getAdminsList(companyId);
   }
 
   @Get('invitations/:companyId')

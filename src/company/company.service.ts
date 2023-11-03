@@ -137,7 +137,9 @@ export class CompanyService {
     });
   }
 
-  async getAdminsList(companyId: number) {
+  async getAdminsList(companyId: number): Promise<{
+    admins: UserEntity[];
+  }> {
     const company = await this.companyRepository.findOne({
       where: { id: companyId },
       relations: ['admins'],
