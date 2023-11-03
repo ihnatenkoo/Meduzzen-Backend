@@ -43,4 +43,37 @@ export class QuizService {
 
     return { quiz };
   }
+
+  async updateQuiz(
+    userId: number,
+    quizId: number,
+    updateQuizDto: Partial<CreateQuizDto>,
+  ) {
+    const quiz = await this.quizRepository.findOne({
+      where: { id: quizId },
+      relations: ['company.owner', 'company.admins'],
+    });
+
+    if (!quiz) {
+      throw new HttpException('Quiz not found', HttpStatus.NOT_FOUND);
+    }
+
+    if (
+      quiz.company.owner.id !== userId &&
+      !quiz.company.admins.some((admins) => admins.id === userId)
+    ) {
+      this.logger.error(
+        `User id:${userId} tried to update quiz in company id:${quiz.company.id}`,
+      );
+      throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
+    }
+
+    this.quizRepository.merge(quiz, updateQuizDto);
+
+    const updatedQuiz = await this.quizRepository.save(quiz);
+
+    delete updatedQuiz.company;
+
+    return { quiz: updatedQuiz };
+  }
 }

@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Param,
+  Patch,
   Post,
   UseGuards,
   UsePipes,
@@ -27,5 +28,16 @@ export class QuizController {
     @Body() createQuizDto: CreateQuizDto,
   ): Promise<{ quiz: QuizEntity }> {
     return this.quizService.createQuiz(userId, companyId, createQuizDto);
+  }
+
+  @Patch(':id')
+  @UseGuards(AuthGuard)
+  @UsePipes(new DtoValidationPipe())
+  async updateQuiz(
+    @User('id') userId: number,
+    @Param('id', IdValidationPipe) quizId: number,
+    @Body() updateQuizDto: Partial<CreateQuizDto>,
+  ) {
+    return this.quizService.updateQuiz(userId, quizId, updateQuizDto);
   }
 }
