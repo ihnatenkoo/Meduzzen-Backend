@@ -7,6 +7,7 @@ import {
   UseGuards,
   UsePipes,
 } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { User } from 'src/decorators/user.decorator';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { DtoValidationPipe } from 'src/pipes/dtoValidation.pipe';
@@ -20,6 +21,7 @@ import { ICreateUserResponse, ITokens } from './types';
 import { AuthService } from './auth.service';
 import { UserEntity } from 'src/user/user.entity';
 
+@ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}

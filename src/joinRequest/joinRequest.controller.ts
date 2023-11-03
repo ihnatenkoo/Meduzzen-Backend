@@ -7,6 +7,7 @@ import {
   UsePipes,
   Body,
 } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { User } from 'src/decorators/user.decorator';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { DtoValidationPipe } from 'src/pipes/dtoValidation.pipe';
@@ -16,6 +17,7 @@ import { RespondInvitationDto } from 'src/invitation/dto/respondInvitation.dto';
 import { JoinRequestEntity } from './joinRequest.entity';
 import { JoinRequestService } from './joinRequest.service';
 
+@ApiTags('join-request')
 @Controller('join-request')
 export class JoinRequestController {
   constructor(private readonly joinRequestService: JoinRequestService) {}

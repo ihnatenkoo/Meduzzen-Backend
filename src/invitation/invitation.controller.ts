@@ -7,6 +7,7 @@ import {
   UseGuards,
   UsePipes,
 } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { User } from 'src/decorators/user.decorator';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { DtoValidationPipe } from 'src/pipes/dtoValidation.pipe';
@@ -17,6 +18,7 @@ import { RespondInvitationDto } from './dto/respondInvitation.dto';
 import { InvitationEntity } from './invitation.entity';
 import { InvitationService } from './invitation.service';
 
+@ApiTags('invitation')
 @Controller('invitation')
 export class InvitationController {
   constructor(private readonly invitationService: InvitationService) {}

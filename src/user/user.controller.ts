@@ -9,6 +9,7 @@ import {
   UseGuards,
   UsePipes,
 } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { DtoValidationPipe } from 'src/pipes/dtoValidation.pipe';
 import { IdValidationPipe } from 'src/pipes/idValidationPipe';
@@ -21,6 +22,7 @@ import { UserEntity } from './user.entity';
 import { IMessage } from 'src/types';
 import { IUserResponse } from './types/user-response.interface';
 
+@ApiTags('user')
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}

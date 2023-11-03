@@ -10,6 +10,7 @@ import {
   UseGuards,
   UsePipes,
 } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { User } from 'src/decorators/user.decorator';
 import { DtoValidationPipe } from 'src/pipes/dtoValidation.pipe';
@@ -27,6 +28,7 @@ import { JoinRequestEntity } from 'src/joinRequest/joinRequest.entity';
 import { QuizEntity } from 'src/quiz/quiz.entity';
 import { CompanyService } from './company.service';
 
+@ApiTags('company')
 @Controller('company')
 export class CompanyController {
   constructor(private readonly companyService: CompanyService) {}

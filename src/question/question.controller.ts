@@ -8,6 +8,7 @@ import {
   UseGuards,
   UsePipes,
 } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { User } from 'src/decorators/user.decorator';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { DtoValidationPipe } from 'src/pipes/dtoValidation.pipe';
@@ -17,6 +18,7 @@ import { IMessage } from 'src/types';
 import { QuestionEntity } from './question.entity';
 import { QuestionService } from './question.service';
 
+@ApiTags('question')
 @Controller('question')
 export class QuestionController {
   constructor(private readonly questionService: QuestionService) {}
