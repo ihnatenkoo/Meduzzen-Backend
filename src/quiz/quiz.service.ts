@@ -5,7 +5,8 @@ import { QuizEntity } from './quiz.entity';
 import { CompanyEntity } from 'src/company/company.entity';
 import { CreateQuizDto } from './dto/createQuiz.dto';
 import { IMessage } from 'src/types';
-import { ACCESS_DENIED } from 'src/constants';
+import { isUserAdmin } from 'src/utils/isUserAdmin';
+import { ACCESS_DENIED, COMPANY_NOT_FOUND } from 'src/constants';
 
 @Injectable()
 export class QuizService {
@@ -28,10 +29,11 @@ export class QuizService {
       relations: ['owner', 'admins'],
     });
 
-    if (
-      company.owner.id !== userId &&
-      !company.admins.some((admins) => admins.id === userId)
-    ) {
+    if (!company) {
+      throw new HttpException(COMPANY_NOT_FOUND, HttpStatus.NOT_FOUND);
+    }
+
+    if (!isUserAdmin(userId, company)) {
       this.logger.error(
         `User id:${userId} tried to create quiz in company id:${companyId}`,
       );
@@ -61,10 +63,7 @@ export class QuizService {
       throw new HttpException('Quiz not found', HttpStatus.NOT_FOUND);
     }
 
-    if (
-      quiz.company.owner.id !== userId &&
-      !quiz.company.admins.some((admins) => admins.id === userId)
-    ) {
+    if (!isUserAdmin(userId, quiz.company)) {
       this.logger.error(
         `User id:${userId} tried to update quiz in company id:${quiz.company.id}`,
       );
@@ -92,10 +91,7 @@ export class QuizService {
       throw new HttpException('Quiz not found', HttpStatus.NOT_FOUND);
     }
 
-    if (
-      quiz.company.owner.id !== userId &&
-      !quiz.company.admins.some((admins) => admins.id === userId)
-    ) {
+    if (!isUserAdmin(userId, quiz.company)) {
       this.logger.error(
         `User id:${userId} tried to delete quiz in company id:${quiz.company.id}`,
       );
