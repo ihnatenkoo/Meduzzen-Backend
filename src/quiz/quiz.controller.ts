@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Param,
   Patch,
   Post,
@@ -12,6 +13,7 @@ import { AuthGuard } from 'src/guards/auth.guard';
 import { DtoValidationPipe } from 'src/pipes/dtoValidation.pipe';
 import { IdValidationPipe } from 'src/pipes/idValidationPipe';
 import { CreateQuizDto } from './dto/createQuiz.dto';
+import { IMessage } from 'src/types';
 import { QuizEntity } from './quiz.entity';
 import { QuizService } from './quiz.service';
 
@@ -37,7 +39,16 @@ export class QuizController {
     @User('id') userId: number,
     @Param('id', IdValidationPipe) quizId: number,
     @Body() updateQuizDto: Partial<CreateQuizDto>,
-  ) {
+  ): Promise<{ quiz: QuizEntity }> {
     return this.quizService.updateQuiz(userId, quizId, updateQuizDto);
+  }
+
+  @Delete(':id')
+  @UseGuards(AuthGuard)
+  async deleteQuiz(
+    @User('id') userId: number,
+    @Param('id', IdValidationPipe) quizId: number,
+  ): Promise<IMessage> {
+    return this.quizService.deleteQuiz(userId, quizId);
   }
 }
