@@ -24,7 +24,7 @@ import { QuizService } from './quiz.service';
 export class QuizController {
   constructor(private readonly quizService: QuizService) {}
 
-  @ApiOperation({ summary: 'Create quiz in Company' })
+  @ApiOperation({ summary: 'Create quiz in company' })
   @Post('create/:companyId')
   @UseGuards(AuthGuard)
   @UsePipes(new DtoValidationPipe())
