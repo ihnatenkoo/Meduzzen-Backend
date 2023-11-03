@@ -8,21 +8,23 @@ import {
   UseGuards,
   UsePipes,
 } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { User } from 'src/decorators/user.decorator';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { DtoValidationPipe } from 'src/pipes/dtoValidation.pipe';
 import { IdValidationPipe } from 'src/pipes/idValidationPipe';
-import { CreateQuestionDto } from './dto/createQuestion.dto';
+import { CreateQuestionDto, UpdateQuestionDto } from './dto/createQuestion.dto';
 import { IMessage } from 'src/types';
 import { QuestionEntity } from './question.entity';
 import { QuestionService } from './question.service';
 
+@ApiBearerAuth()
 @ApiTags('question')
 @Controller('question')
 export class QuestionController {
   constructor(private readonly questionService: QuestionService) {}
 
+  @ApiOperation({ summary: 'Create question in quiz' })
   @Post('create/:quizId')
   @UseGuards(AuthGuard)
   @UsePipes(new DtoValidationPipe())
@@ -38,13 +40,17 @@ export class QuestionController {
     );
   }
 
+  @ApiOperation({ summary: 'Update question by ID' })
+  @ApiBody({
+    type: UpdateQuestionDto,
+  })
   @Patch(':id')
   @UseGuards(AuthGuard)
   @UsePipes(new DtoValidationPipe())
   async updateQuestion(
     @User('id') userId: number,
     @Param('id', IdValidationPipe) questionId: number,
-    @Body() updateQuestionDto: Partial<CreateQuestionDto>,
+    @Body() updateQuestionDto: UpdateQuestionDto,
   ): Promise<{ question: QuestionEntity }> {
     return this.questionService.updateQuestion(
       userId,
@@ -53,6 +59,7 @@ export class QuestionController {
     );
   }
 
+  @ApiOperation({ summary: 'Delete question by ID' })
   @Delete(':id')
   @UseGuards(AuthGuard)
   async deleteQuestion(
