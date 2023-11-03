@@ -27,6 +27,16 @@ import { InitResetPasswordDto } from './dto/initResetPassword.dto';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Get information about authorized user',
+  })
+  @Get('me')
+  @UseGuards(AuthGuard)
+  async userInfo(@User() user: UserEntity): Promise<IUserResponse> {
+    return { user };
+  }
+
   @ApiOperation({
     summary: 'Register in the app',
   })
@@ -55,16 +65,6 @@ export class AuthController {
   @HttpCode(200)
   async loginAuth0(@Body() loginAuth0Dto: LoginAuth0Dto): Promise<ITokens> {
     return this.authService.loginAuth0(loginAuth0Dto);
-  }
-
-  @ApiBearerAuth()
-  @ApiOperation({
-    summary: 'Get information about authorized user',
-  })
-  @Get('me')
-  @UseGuards(AuthGuard)
-  async userInfo(@User() user: UserEntity): Promise<IUserResponse> {
-    return { user };
   }
 
   @ApiOperation({
