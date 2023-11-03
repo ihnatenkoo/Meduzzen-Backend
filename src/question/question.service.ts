@@ -6,7 +6,7 @@ import { CreateQuestionDto } from './dto/createQuestion.dto';
 import { QuizEntity } from 'src/quiz/quiz.entity';
 import { IMessage } from 'src/types';
 import { isUserAdmin } from 'src/utils/isUserAdmin';
-import { ACCESS_DENIED } from 'src/constants';
+import { ACCESS_DENIED, QUESTION_NOT_FOUND } from 'src/constants';
 
 @Injectable()
 export class QuestionService {
@@ -63,7 +63,7 @@ export class QuestionService {
     });
 
     if (!question) {
-      throw new HttpException('Question not found', HttpStatus.NOT_FOUND);
+      throw new HttpException(QUESTION_NOT_FOUND, HttpStatus.NOT_FOUND);
     }
 
     if (!isUserAdmin(userId, question.quiz.company)) {
@@ -91,7 +91,7 @@ export class QuestionService {
     });
 
     if (!question) {
-      throw new HttpException('Question not found', HttpStatus.NOT_FOUND);
+      throw new HttpException(QUESTION_NOT_FOUND, HttpStatus.NOT_FOUND);
     }
 
     if (!isUserAdmin(userId, question.quiz.company)) {

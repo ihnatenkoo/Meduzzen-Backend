@@ -6,7 +6,11 @@ import { CompanyEntity } from 'src/company/company.entity';
 import { CreateQuizDto } from './dto/createQuiz.dto';
 import { IMessage } from 'src/types';
 import { isUserAdmin } from 'src/utils/isUserAdmin';
-import { ACCESS_DENIED, COMPANY_NOT_FOUND } from 'src/constants';
+import {
+  ACCESS_DENIED,
+  COMPANY_NOT_FOUND,
+  QUIZ_NOT_FOUND,
+} from 'src/constants';
 
 @Injectable()
 export class QuizService {
@@ -60,7 +64,7 @@ export class QuizService {
     });
 
     if (!quiz) {
-      throw new HttpException('Quiz not found', HttpStatus.NOT_FOUND);
+      throw new HttpException(QUIZ_NOT_FOUND, HttpStatus.NOT_FOUND);
     }
 
     if (!isUserAdmin(userId, quiz.company)) {
@@ -88,7 +92,7 @@ export class QuizService {
     });
 
     if (!quiz) {
-      throw new HttpException('Quiz not found', HttpStatus.NOT_FOUND);
+      throw new HttpException(QUIZ_NOT_FOUND, HttpStatus.NOT_FOUND);
     }
 
     if (!isUserAdmin(userId, quiz.company)) {
@@ -100,7 +104,7 @@ export class QuizService {
 
     await this.quizRepository.delete(quizId);
 
-    this.logger.log(`Quiz id:${quiz.id} deleted`);
+    this.logger.log(`Quiz id:${quizId} deleted`);
 
     return { message: 'Quiz deleted successfully' };
   }
