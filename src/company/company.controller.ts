@@ -16,10 +16,13 @@ import { DtoValidationPipe } from 'src/pipes/dtoValidation.pipe';
 import { PageDto } from 'src/pagination/dto/page.dto';
 import { PageOptionsDto } from 'src/pagination/dto/page-options.dto';
 import { CreateCompanyDto } from './dto/createCompany.dto';
-import { ChangeVisibilityDto } from './dto/changeVisability.dto';
+import { ChangeVisibilityDto } from './dto/changeVisibility.dto';
 import { ICompanyResponse } from './types/company-response.interface';
 import { IMessage } from 'src/types';
 import { CompanyEntity } from './company.entity';
+import { UserEntity } from 'src/user/user.entity';
+import { InvitationEntity } from 'src/invitation/invitation.entity';
+import { JoinRequestEntity } from 'src/joinRequest/joinRequest.entity';
 import { CompanyService } from './company.service';
 
 @Controller('company')
@@ -43,7 +46,38 @@ export class CompanyController {
     return this.companyService.getAllCompanies(query);
   }
 
+  @Get('invitations/:companyId')
+  @UseGuards(AuthGuard)
+  async getInvitations(
+    @User('id') userId: number,
+    @Param('companyId') companyId: string,
+  ): Promise<{
+    invitations: InvitationEntity[];
+  }> {
+    return this.companyService.getInvitations(userId, +companyId);
+  }
+
+  @Get('join-requests/:companyId')
+  @UseGuards(AuthGuard)
+  async getJoinRequests(
+    @User('id') userId: number,
+    @Param('companyId') companyId: string,
+  ): Promise<{
+    joinRequests: JoinRequestEntity[];
+  }> {
+    return this.companyService.getJoinRequests(userId, +companyId);
+  }
+
+  @Get('members/:companyId')
+  @UseGuards(AuthGuard)
+  async getAllMembers(
+    @Param('companyId') companyId: string,
+  ): Promise<{ members: UserEntity[] }> {
+    return this.companyService.getAllMembers(+companyId);
+  }
+
   @Get(':id')
+  @UseGuards(AuthGuard)
   async findCompanyById(@Param('id') id: number): Promise<ICompanyResponse> {
     return this.companyService.findCompanyById(id);
   }
@@ -58,7 +92,7 @@ export class CompanyController {
   ): Promise<ICompanyResponse> {
     return this.companyService.updateCompany(
       userId,
-      Number(companyIdToUpdate),
+      +companyIdToUpdate,
       updateCompanyDto,
     );
   }
@@ -69,7 +103,7 @@ export class CompanyController {
     @User('id') userId: number,
     @Param('id') companyIdToDelete: string,
   ): Promise<IMessage> {
-    return this.companyService.deleteCompany(userId, Number(companyIdToDelete));
+    return this.companyService.deleteCompany(userId, +companyIdToDelete);
   }
 
   @Post('change-visibility/:id')
@@ -82,8 +116,27 @@ export class CompanyController {
   ): Promise<IMessage> {
     return this.companyService.changeCompanyVisibility(
       userId,
-      Number(companyIdToUpdate),
+      +companyIdToUpdate,
       changeVisibilityDto,
     );
+  }
+
+  @Delete(':companyId/member/:memberId')
+  @UseGuards(AuthGuard)
+  async removeMember(
+    @User('id') ownerId: number,
+    @Param('memberId') memberId: string,
+    @Param('companyId') companyId: string,
+  ): Promise<IMessage> {
+    return this.companyService.removeMember(ownerId, +companyId, +memberId);
+  }
+
+  @Delete('leave/:companyId')
+  @UseGuards(AuthGuard)
+  async leaveCompany(
+    @User('id') memberId: number,
+    @Param('companyId') companyId: string,
+  ): Promise<IMessage> {
+    return this.companyService.leaveCompany(memberId, +companyId);
   }
 }

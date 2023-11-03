@@ -1,9 +1,9 @@
 import { ExecutionContext, createParamDecorator } from '@nestjs/common';
 import { IExpressRequest } from 'src/types';
-import { IUser } from 'src/user/types/user.interface';
+import { UserEntity } from 'src/user/user.entity';
 
 export const User = createParamDecorator(
-  (data: keyof IUser, context: ExecutionContext) => {
+  (data: keyof UserEntity, context: ExecutionContext) => {
     const request = context.switchToHttp().getRequest<IExpressRequest>();
 
     if (!request.user) {

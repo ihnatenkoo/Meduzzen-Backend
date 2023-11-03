@@ -1,5 +1,13 @@
 import { CompanyEntity } from 'src/company/company.entity';
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { InvitationEntity } from 'src/invitation/invitation.entity';
+import { JoinRequestEntity } from 'src/joinRequest/joinRequest.entity';
+import {
+  Column,
+  Entity,
+  ManyToMany,
+  OneToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
 @Entity({ name: 'users' })
 export class UserEntity {
@@ -23,4 +31,16 @@ export class UserEntity {
 
   @OneToMany(() => CompanyEntity, (company) => company.owner)
   ownerCompanies: CompanyEntity[];
+
+  @OneToMany(() => InvitationEntity, (invitation) => invitation.sender)
+  sentInvitations: InvitationEntity[];
+
+  @OneToMany(() => InvitationEntity, (invitation) => invitation.recipient)
+  receivedInvitations: InvitationEntity[];
+
+  @OneToMany(() => JoinRequestEntity, (joinRequest) => joinRequest.sender)
+  sentJoinRequests: JoinRequestEntity[];
+
+  @ManyToMany(() => CompanyEntity, (company) => company.members)
+  memberInCompanies: CompanyEntity[];
 }

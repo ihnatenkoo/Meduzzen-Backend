@@ -4,17 +4,18 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CompanyEntity } from './company.entity';
 import { UserEntity } from 'src/user/user.entity';
+import { InvitationEntity } from 'src/invitation/invitation.entity';
+import { JoinRequestEntity } from 'src/joinRequest/joinRequest.entity';
 import { ICompanyResponse } from './types/company-response.interface';
 import { IMessage } from 'src/types';
 import { PageDto } from 'src/pagination/dto/page.dto';
 import { PageOptionsDto } from 'src/pagination/dto/page-options.dto';
-import { ChangeVisibilityDto } from './dto/changeVisability.dto';
+import { ChangeVisibilityDto } from './dto/changeVisibility.dto';
 import { paginate } from 'src/pagination/paginate';
 import {
   ACCESS_DENIED,
   COMPANY_DELETED_SUCCESSFULLY,
   COMPANY_NOT_FOUND,
-  USER_NOT_FOUND,
   VISIBILITY_MODIFIED_SUCCESSFULLY,
 } from 'src/constants';
 
@@ -36,10 +37,6 @@ export class CompanyService {
     const user = await this.userRepository.findOne({
       where: { id: userId },
     });
-
-    if (!user) {
-      throw new HttpException(USER_NOT_FOUND, HttpStatus.NOT_FOUND);
-    }
 
     const company = await this.companyRepository.save({
       ...createCompanyDto,
@@ -63,6 +60,71 @@ export class CompanyService {
     return { company };
   }
 
+  async getAllMembers(companyId: number): Promise<{ members: UserEntity[] }> {
+    const company = await this.companyRepository.findOne({
+      where: { id: companyId },
+      relations: ['members'],
+    });
+
+    if (!company) {
+      throw new HttpException(COMPANY_NOT_FOUND, HttpStatus.NOT_FOUND);
+    }
+
+    return { members: company.members };
+  }
+
+  async getInvitations(
+    userId: number,
+    companyId: number,
+  ): Promise<{
+    invitations: InvitationEntity[];
+  }> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['ownerCompanies.invitations.sender'],
+    });
+
+    const company = user.ownerCompanies.find(
+      (company) => company.id === companyId,
+    );
+
+    if (!company) {
+      this.logger.error(
+        `Access denied! User ${user.email} try to get invitations in company id:${companyId}`,
+      );
+
+      throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
+    }
+
+    return { invitations: company.invitations };
+  }
+
+  async getJoinRequests(
+    userId: number,
+    companyId: number,
+  ): Promise<{
+    joinRequests: JoinRequestEntity[];
+  }> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['ownerCompanies.joinRequests.sender'],
+    });
+
+    const company = user.ownerCompanies.find(
+      (company) => company.id === companyId,
+    );
+
+    if (!company) {
+      this.logger.error(
+        `Access denied! User ${user.email} try to get joinRequests in company id:${companyId}`,
+      );
+
+      throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
+    }
+
+    return { joinRequests: company.joinRequests };
+  }
+
   async getAllCompanies(
     query: PageOptionsDto,
   ): Promise<PageDto<CompanyEntity>> {
@@ -84,10 +146,6 @@ export class CompanyService {
       where: { id: userId },
       relations: ['ownerCompanies'],
     });
-
-    if (!user) {
-      throw new HttpException(USER_NOT_FOUND, HttpStatus.NOT_FOUND);
-    }
 
     const { company: existedCompany } =
       await this.findCompanyById(companyIdToUpdate);
@@ -123,10 +181,6 @@ export class CompanyService {
       relations: ['ownerCompanies'],
     });
 
-    if (!user) {
-      throw new HttpException(USER_NOT_FOUND, HttpStatus.NOT_FOUND);
-    }
-
     if (
       !user.ownerCompanies.some((company) => company.id === companyIdToDelete)
     ) {
@@ -140,7 +194,7 @@ export class CompanyService {
     await this.companyRepository.delete(companyIdToDelete);
 
     this.logger.log(
-      `${COMPANY_DELETED_SUCCESSFULLY}. Company id: ${companyIdToDelete}`,
+      `${COMPANY_DELETED_SUCCESSFULLY}. Company id:${companyIdToDelete}`,
     );
 
     return { message: COMPANY_DELETED_SUCCESSFULLY };
@@ -156,15 +210,11 @@ export class CompanyService {
       relations: ['ownerCompanies'],
     });
 
-    if (!user) {
-      throw new HttpException(USER_NOT_FOUND, HttpStatus.NOT_FOUND);
-    }
-
     if (
       !user.ownerCompanies.some((company) => company.id === companyIdToUpdate)
     ) {
       this.logger.error(
-        `Access denied! User ${user.email} try to change visibility in company id: ${companyIdToUpdate}`,
+        `Access denied! User ${user.email} try to change visibility in company id:${companyIdToUpdate}`,
       );
 
       throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
@@ -180,9 +230,73 @@ export class CompanyService {
     await this.companyRepository.save(updatedCompany);
 
     this.logger.log(
-      `${VISIBILITY_MODIFIED_SUCCESSFULLY}. Company id: ${companyIdToUpdate}`,
+      `${VISIBILITY_MODIFIED_SUCCESSFULLY}. Company id:${companyIdToUpdate}`,
     );
 
     return { message: VISIBILITY_MODIFIED_SUCCESSFULLY };
+  }
+
+  async removeMember(
+    ownerId: number,
+    companyId: number,
+    memberId: number,
+  ): Promise<IMessage> {
+    const user = await this.userRepository.findOne({
+      where: { id: ownerId },
+      relations: ['ownerCompanies.members'],
+    });
+
+    const company = user.ownerCompanies.find(
+      (company) => company.id === companyId,
+    );
+
+    if (!company) {
+      this.logger.error(
+        `Access denied! User ${user.email} try to remove user in company id: ${companyId}`,
+      );
+
+      throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
+    }
+
+    const member = company.members.find((member) => member.id === memberId);
+
+    if (!member) {
+      throw new HttpException('Member not found', HttpStatus.NOT_FOUND);
+    }
+
+    company.members = company.members.filter(
+      (member) => member.id !== memberId,
+    );
+
+    await this.companyRepository.save(company);
+
+    this.logger.log(
+      `Member id:${memberId} successfully removed from company id:${company.id}`,
+    );
+
+    return { message: 'Member successfully removed' };
+  }
+
+  async leaveCompany(memberId: number, companyId: number): Promise<IMessage> {
+    const user = await this.userRepository.findOne({
+      where: { id: memberId },
+      relations: ['memberInCompanies'],
+    });
+
+    if (!user.memberInCompanies.some((company) => company.id === companyId)) {
+      throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
+    }
+
+    user.memberInCompanies = user.memberInCompanies.filter(
+      (company) => company.id !== companyId,
+    );
+
+    await this.userRepository.save(user);
+
+    this.logger.log(
+      `Member id:${memberId} successfully left from the company id:${companyId}`,
+    );
+
+    return { message: 'Member successfully left' };
   }
 }

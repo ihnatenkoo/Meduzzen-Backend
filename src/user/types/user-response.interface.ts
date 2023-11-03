@@ -1,5 +1,5 @@
-import { IUser } from './user.interface';
+import { UserEntity } from '../user.entity';
 
 export interface IUserResponse {
-  user: IUser;
+  user: UserEntity;
 }

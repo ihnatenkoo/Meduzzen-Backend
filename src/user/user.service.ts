@@ -55,13 +55,13 @@ export class UserService {
       throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
     }
 
-    const { user: existedUser } = await this.findUserById(userId);
-    const updatedUser = this.userRepository.merge(existedUser, updateUserDto);
-    const user = await this.userRepository.save(updatedUser);
+    const { user } = await this.findUserById(userId);
+    this.userRepository.merge(user, updateUserDto);
+    const updatedUser = await this.userRepository.save(user);
 
-    this.logger.log(`User ${user.email} updated successfully`);
+    this.logger.log(`User ${updatedUser.email} updated successfully`);
 
-    return { user };
+    return { user: updatedUser };
   }
 
   async deleteUser(userId: number, userIdToDelete: number): Promise<IMessage> {

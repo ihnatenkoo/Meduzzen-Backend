@@ -11,7 +11,6 @@ import { User } from 'src/decorators/user.decorator';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { DtoValidationPipe } from 'src/pipes/dtoValidation.pipe';
 import { CreateUserDto } from 'src/auth/dto/createUser.dto';
-import { IUser } from 'src/user/types/user.interface';
 import { IUserResponse } from 'src/user/types/user-response.interface';
 import { LoginDto } from './dto/login.dto';
 import { LoginAuth0Dto } from './dto/loginAuth0.dto';
@@ -19,6 +18,7 @@ import { ResetPasswordDto } from './dto/resetPassword.dto';
 import { IMessage } from 'src/types';
 import { ICreateUserResponse, ITokens } from './types';
 import { AuthService } from './auth.service';
+import { UserEntity } from 'src/user/user.entity';
 
 @Controller('auth')
 export class AuthController {
@@ -47,7 +47,7 @@ export class AuthController {
 
   @Get('me')
   @UseGuards(AuthGuard)
-  async userInfo(@User() user: IUser): Promise<IUserResponse> {
+  async userInfo(@User() user: UserEntity): Promise<IUserResponse> {
     return { user };
   }
 
