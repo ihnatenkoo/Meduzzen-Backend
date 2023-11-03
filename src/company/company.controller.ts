@@ -24,6 +24,7 @@ import { CompanyEntity } from './company.entity';
 import { UserEntity } from 'src/user/user.entity';
 import { InvitationEntity } from 'src/invitation/invitation.entity';
 import { JoinRequestEntity } from 'src/joinRequest/joinRequest.entity';
+import { QuizEntity } from 'src/quiz/quiz.entity';
 import { CompanyService } from './company.service';
 
 @Controller('company')
@@ -39,8 +40,22 @@ export class CompanyController {
 
   @Get('admins-list/:companyId')
   @UseGuards(AuthGuard)
-  async getAdminsList(@Param('companyId', IdValidationPipe) companyId: string) {
-    return this.companyService.getAdminsList(+companyId);
+  async getAdminsList(
+    @Param('companyId', IdValidationPipe) companyId: number,
+  ): Promise<{
+    admins: UserEntity[];
+  }> {
+    return this.companyService.getAdminsList(companyId);
+  }
+
+  @Get('quizzes-list/:companyId')
+  @UseGuards(AuthGuard)
+  async getQuizzesList(
+    @Param('companyId', IdValidationPipe) companyId: number,
+  ): Promise<{
+    quizzes: QuizEntity[];
+  }> {
+    return this.companyService.getQuizzesList(companyId);
   }
 
   @Get('invitations/:companyId')
