@@ -1,5 +1,5 @@
 import { Controller, Get } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AppService } from './app.service';
 import { IHealthCheck } from './types';
 
@@ -8,6 +8,9 @@ import { IHealthCheck } from './types';
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
+  @ApiOperation({
+    summary: 'Health check',
+  })
   @Get()
   async getHealthCheck(): Promise<IHealthCheck> {
     return this.appService.getHealthCheck();
