@@ -50,4 +50,36 @@ export class QuestionService {
 
     return { question };
   }
+
+  async updateQuestion(
+    userId: number,
+    questionId: number,
+    updateQuestionDto: Partial<CreateQuestionDto>,
+  ): Promise<{ question: QuestionEntity }> {
+    const question = await this.questionRepository.findOne({
+      where: { id: questionId },
+      relations: ['quiz.company.owner', 'quiz.company.admins'],
+    });
+
+    if (!question) {
+      throw new HttpException('Question not found', HttpStatus.NOT_FOUND);
+    }
+
+    if (!isUserAdmin(userId, question.quiz.company)) {
+      this.logger.error(
+        `User id:${userId} tried to update question in quiz id:${question.quiz.id}`,
+      );
+      throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
+    }
+
+    this.questionRepository.merge(question, updateQuestionDto);
+
+    const updatedQuestion = await this.questionRepository.save(question);
+
+    this.logger.log(`Question id:${question.id} updated`);
+
+    delete updatedQuestion.quiz;
+
+    return { question: updatedQuestion };
+  }
 }

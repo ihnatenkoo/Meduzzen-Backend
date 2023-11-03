@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Param,
+  Patch,
   Post,
   UseGuards,
   UsePipes,
@@ -30,6 +31,21 @@ export class QuestionController {
       userId,
       quizId,
       createQuestionDto,
+    );
+  }
+
+  @Patch(':id')
+  @UseGuards(AuthGuard)
+  @UsePipes(new DtoValidationPipe())
+  async updateQuestion(
+    @User('id') userId: number,
+    @Param('id', IdValidationPipe) questionId: number,
+    @Body() updateQuestionDto: Partial<CreateQuestionDto>,
+  ): Promise<{ question: QuestionEntity }> {
+    return this.questionService.updateQuestion(
+      userId,
+      questionId,
+      updateQuestionDto,
     );
   }
 }
