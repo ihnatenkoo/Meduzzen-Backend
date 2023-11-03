@@ -6,6 +6,7 @@ import { CompanyEntity } from './company.entity';
 import { UserEntity } from 'src/user/user.entity';
 import { InvitationEntity } from 'src/invitation/invitation.entity';
 import { JoinRequestEntity } from 'src/joinRequest/joinRequest.entity';
+import { QuizEntity } from 'src/quiz/quiz.entity';
 import { ICompanyResponse } from './types/company-response.interface';
 import { IMessage } from 'src/types';
 import { PageDto } from 'src/pagination/dto/page.dto';
@@ -135,6 +136,21 @@ export class CompanyService {
       observeVisibility: true,
       repository: this.companyRepository,
     });
+  }
+
+  async getQuizzesList(companyId: number): Promise<{
+    quizzes: QuizEntity[];
+  }> {
+    const company = await this.companyRepository.findOne({
+      where: { id: companyId },
+      relations: ['quizzes'],
+    });
+
+    if (!company) {
+      throw new HttpException(COMPANY_NOT_FOUND, HttpStatus.NOT_FOUND);
+    }
+
+    return { quizzes: company.quizzes };
   }
 
   async getAdminsList(companyId: number): Promise<{
