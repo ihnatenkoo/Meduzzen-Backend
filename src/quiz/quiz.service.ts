@@ -23,6 +23,21 @@ export class QuizService {
     private readonly companyRepository: Repository<CompanyEntity>,
   ) {}
 
+  async getQuiz(quizId: number): Promise<{
+    quiz: QuizEntity;
+  }> {
+    const quiz = await this.quizRepository.findOne({
+      where: { id: quizId },
+      relations: ['questions'],
+    });
+
+    if (!quiz) {
+      throw new HttpException(QUIZ_NOT_FOUND, HttpStatus.NOT_FOUND);
+    }
+
+    return { quiz };
+  }
+
   async createQuiz(
     userId: number,
     companyId: number,
