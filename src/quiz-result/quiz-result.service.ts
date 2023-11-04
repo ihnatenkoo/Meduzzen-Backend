@@ -23,11 +23,18 @@ export class QuizResultService {
   ): Promise<ICreateQuizResult> {
     const quiz = await this.quizRepository.findOne({
       where: { id: quizId },
-      relations: ['questions', 'company'],
+      relations: ['questions', 'company.members'],
     });
 
     if (!quiz) {
       throw new HttpException(QUIZ_NOT_FOUND, HttpStatus.NOT_FOUND);
+    }
+
+    if (!quiz.company.members.some((member) => member.id === user.id)) {
+      throw new HttpException(
+        `You are not a member in company id:${quiz.company.id}`,
+        HttpStatus.FORBIDDEN,
+      );
     }
 
     const totalQuestions = quiz.questions.length;

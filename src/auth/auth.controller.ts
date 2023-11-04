@@ -12,7 +12,7 @@ import { User } from 'src/decorators/user.decorator';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { DtoValidationPipe } from 'src/pipes/dtoValidation.pipe';
 import { CreateUserDto } from 'src/auth/dto/createUser.dto';
-import { IUserResponse } from 'src/user/types/user-response.interface';
+import { IUserResponse } from 'src/user/types';
 import { LoginDto } from './dto/login.dto';
 import { LoginAuth0Dto } from './dto/loginAuth0.dto';
 import { ResetPasswordDto } from './dto/resetPassword.dto';
