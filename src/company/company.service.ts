@@ -373,7 +373,7 @@ export class CompanyService {
   async addAdmin(
     ownerId: number,
     companyId: number,
-    adminId: number,
+    candidateId: number,
   ): Promise<IMessage> {
     const owner = await this.userRepository.findOne({
       where: { id: ownerId },
@@ -388,7 +388,9 @@ export class CompanyService {
       throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
     }
 
-    const candidate = company.members.find((member) => member.id === adminId);
+    const candidate = company.members.find(
+      (member) => member.id === candidateId,
+    );
 
     if (!candidate) {
       throw new HttpException(
