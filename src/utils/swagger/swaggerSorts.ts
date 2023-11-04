@@ -8,6 +8,7 @@ export const tagsSorter = (a: any, b: any) => {
     ['join-request']: '5',
     quiz: '6',
     question: '7',
+    ['quiz-result']: '8',
   };
 
   return order[a]?.localeCompare(order[b]);

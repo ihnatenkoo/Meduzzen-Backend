@@ -12,7 +12,7 @@ export class QuestionEntity {
   @Column({ type: 'text', array: true, default: [] })
   answers: string[];
 
-  @Column({ select: false })
+  @Column()
   correctAnswerIndex: number;
 
   @ManyToOne(() => QuizEntity, (quiz) => quiz.questions)

@@ -7,6 +7,7 @@ import {
 } from 'typeorm';
 import { CompanyEntity } from 'src/company/company.entity';
 import { QuestionEntity } from 'src/question/question.entity';
+import { QuizzesResultsEntity } from 'src/quiz-result/quiz-result.entity';
 
 @Entity({ name: 'quizzes' })
 export class QuizEntity {
@@ -22,9 +23,12 @@ export class QuizEntity {
   @Column()
   frequency: number;
 
-  @ManyToOne(() => CompanyEntity, (company) => company)
+  @ManyToOne(() => CompanyEntity, (company) => company.quizzes)
   company: CompanyEntity;
 
   @OneToMany(() => QuestionEntity, (question) => question.quiz)
   questions: QuestionEntity[];
+
+  @OneToMany(() => QuizzesResultsEntity, (quizResult) => quizResult.quiz)
+  completedQuizzes: QuizzesResultsEntity[];
 }
