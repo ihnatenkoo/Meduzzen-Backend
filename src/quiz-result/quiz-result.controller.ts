@@ -1,8 +1,11 @@
 import { Body, Controller, Post, UseGuards, UsePipes } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from 'src/guards/auth.guard';
+import { User } from 'src/decorators/user.decorator';
 import { DtoValidationPipe } from 'src/pipes/dtoValidation.pipe';
 import { CreateQuizResultDto } from './dto/createQuizResult.dto';
+import { UserEntity } from 'src/user/user.entity';
+import { ICreateQuizResult } from './interface';
 import { QuizResultService } from './quiz-result.service';
 
 @ApiBearerAuth()
@@ -11,11 +14,14 @@ import { QuizResultService } from './quiz-result.service';
 export class QuizResultController {
   constructor(private readonly quizResultService: QuizResultService) {}
 
+  @ApiOperation({ summary: 'Create quiz result' })
   @Post('create')
   @UseGuards(AuthGuard)
   @UsePipes(new DtoValidationPipe())
-  async createQuizResult(@Body() crateQuizResultDto: CreateQuizResultDto) {
-    console.log('createQuizDto', crateQuizResultDto);
-    return this.quizResultService.createQuizResult(crateQuizResultDto);
+  async createQuizResult(
+    @User() user: UserEntity,
+    @Body() crateQuizResultDto: CreateQuizResultDto,
+  ): Promise<ICreateQuizResult> {
+    return this.quizResultService.createQuizResult(user, crateQuizResultDto);
   }
 }

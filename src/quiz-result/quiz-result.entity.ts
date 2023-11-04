@@ -10,7 +10,7 @@ import {
 } from 'typeorm';
 
 @Entity({ name: 'quizzes_results' })
-export class QuizzesResultsEntity {
+export class QuizResultEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -20,7 +20,7 @@ export class QuizzesResultsEntity {
   @Column()
   totalQuestions: number;
 
-  @Column()
+  @Column({ type: 'float' })
   ratio: number;
 
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })

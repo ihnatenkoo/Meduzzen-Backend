@@ -12,7 +12,7 @@ import { UserEntity } from 'src/user/user.entity';
 import { InvitationEntity } from 'src/invitation/invitation.entity';
 import { JoinRequestEntity } from 'src/joinRequest/joinRequest.entity';
 import { QuizEntity } from 'src/quiz/quiz.entity';
-import { QuizzesResultsEntity } from 'src/quiz-result/quiz-result.entity';
+import { QuizResultEntity } from 'src/quiz-result/quiz-result.entity';
 
 @Entity({ name: 'companies' })
 export class CompanyEntity {
@@ -41,8 +41,8 @@ export class CompanyEntity {
   @OneToMany(() => QuizEntity, (quiz) => quiz.company)
   quizzes: QuizEntity[];
 
-  @OneToMany(() => QuizzesResultsEntity, (quiz) => quiz.company)
-  completedQuizzes: QuizzesResultsEntity[];
+  @OneToMany(() => QuizResultEntity, (quiz) => quiz.company)
+  completedQuizzes: QuizResultEntity[];
 
   @ManyToMany(() => UserEntity, (user) => user.memberInCompanies)
   @JoinTable()
