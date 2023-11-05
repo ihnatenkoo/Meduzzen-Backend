@@ -71,7 +71,7 @@ export class AuthService {
     });
 
     if (!user) {
-      this.logger.error(`${BAD_CREDENTIALS}. User id: ${user.id}`);
+      this.logger.error(`${BAD_CREDENTIALS}. Email: ${loginDto.email}`);
 
       throw new HttpException(BAD_CREDENTIALS, HttpStatus.FORBIDDEN);
     }

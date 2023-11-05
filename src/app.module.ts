@@ -3,6 +3,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule } from '@nestjs/config';
 import { MailerModule } from '@nestjs-modules/mailer';
+import { CacheModule } from '@nestjs/cache-manager';
+import * as redisStore from 'cache-manager-redis-store';
 import { dataSourceOptions } from 'db/data-source';
 import { CorsMiddleware } from './middlewares/cors.middleware';
 import { AuthMiddleware } from './middlewares/auth.middleware';
@@ -21,6 +23,12 @@ import { QuizResultModule } from './quiz-result/quiz-result.module';
   imports: [
     ConfigModule.forRoot(),
     TypeOrmModule.forRoot(dataSourceOptions),
+    CacheModule.register({
+      isGlobal: true,
+      store: redisStore,
+      host: process.env.REDIS_HOST ?? 'localhost',
+      port: process.env.REDIS_PORT ?? 6379,
+    }),
     MailerModule.forRoot({
       transport: process.env.NODEMAILER_TRANSPORT,
     }),
