@@ -5,7 +5,7 @@ import { User } from 'src/decorators/user.decorator';
 import { DtoValidationPipe } from 'src/pipes/dtoValidation.pipe';
 import { CreateQuizResultDto } from './dto/createQuizResult.dto';
 import { UserEntity } from 'src/user/user.entity';
-import { ICreateQuizResult } from './interface';
+import { ICreateQuizResult } from './interfaces';
 import { QuizResultService } from './quiz-result.service';
 
 @ApiBearerAuth()

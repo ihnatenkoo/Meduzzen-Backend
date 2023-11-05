@@ -1,6 +1,4 @@
 import { CompanyEntity } from 'src/company/company.entity';
-import { QuizEntity } from 'src/quiz/quiz.entity';
-import { UserEntity } from 'src/user/user.entity';
 import {
   Column,
   Entity,
@@ -8,6 +6,9 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import { IQuizResultDetail } from './interfaces';
+import { QuizEntity } from 'src/quiz/quiz.entity';
+import { UserEntity } from 'src/user/user.entity';
 
 @Entity({ name: 'quizzes_results' })
 export class QuizResultEntity {
@@ -22,6 +23,9 @@ export class QuizResultEntity {
 
   @Column({ type: 'float' })
   ratio: number;
+
+  @Column('jsonb')
+  details: IQuizResultDetail[];
 
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   finalTime: Date;

@@ -5,3 +5,9 @@ export interface ICreateQuizResult {
     ratio: number;
   };
 }
+
+export interface IQuizResultDetail {
+  question: string;
+  answer: string;
+  isCorrect: boolean;
+}

@@ -5,7 +5,7 @@ import { CreateQuizResultDto } from './dto/createQuizResult.dto';
 import { QuizEntity } from 'src/quiz/quiz.entity';
 import { QuizResultEntity } from './quiz-result.entity';
 import { UserEntity } from 'src/user/user.entity';
-import { ICreateQuizResult } from './interface';
+import { ICreateQuizResult, IQuizResultDetail } from './interfaces';
 import { QUIZ_NOT_FOUND } from 'src/constants';
 
 @Injectable()
@@ -53,21 +53,33 @@ export class QuizResultService {
 
     let correctAnswers = 0;
 
-    quiz.questions.forEach((question) => {
-      if (question.correctAnswerIndex === userAnswersNormalize[question.id]) {
+    const details: IQuizResultDetail[] = quiz.questions.map((question) => {
+      const userAnswerIndex = userAnswersNormalize[question.id];
+      const userAnswerValue = question.answers[userAnswerIndex];
+      let isCorrect = false;
+
+      if (question.correctAnswerIndex === userAnswerIndex) {
         correctAnswers++;
+        isCorrect = true;
       }
+
+      return {
+        question: question.question,
+        answer: userAnswerValue,
+        isCorrect,
+      };
     });
 
     const ratio = +(correctAnswers / totalQuestions).toFixed(2);
 
     await this.quizResultRepository.save({
       user,
-      correctAnswers,
-      ratio,
-      totalQuestions,
       quiz,
       company: quiz.company,
+      correctAnswers,
+      totalQuestions,
+      ratio,
+      details,
     });
 
     return { result: { totalQuestions, correctAnswers, ratio } };
