@@ -87,7 +87,7 @@ export class QuizResultService {
 
     const ratio = +(correctAnswers / totalQuestions).toFixed(2);
 
-    await this.quizResultRepository.save({
+    const newQuizResult = await this.quizResultRepository.save({
       user,
       quiz,
       company: quiz.company,
@@ -97,45 +97,54 @@ export class QuizResultService {
       details,
     });
 
+    const quizResult = await this.quizResultRepository.findOne({
+      where: { id: newQuizResult.id },
+      relations: ['user', 'quiz', 'company'],
+    });
+
+    await this.cacheService.set(`quizResult${quizResult.id}`, quizResult, {
+      ttl: TWO_DAYS_IN_SECONDS,
+    });
+
     this.logger.log(`Created quiz result for user id:${user.id}`);
 
     return { result: { totalQuestions, correctAnswers, ratio } };
   }
 
   async getQuizResult(userId: number, resultId: number) {
-    const cachedResult = await this.cacheService.get<QuizResultEntity>(
+    const cachedQuizResult = await this.cacheService.get<QuizResultEntity>(
       `quizResult${resultId}`,
     );
 
-    if (cachedResult) {
-      if (cachedResult.user.id !== userId) {
+    if (cachedQuizResult) {
+      if (cachedQuizResult.user.id !== userId) {
         throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
       }
 
       this.logger.log(`Get quiz result from cache for user id:${userId}`);
 
-      return cachedResult;
+      return cachedQuizResult;
     }
 
-    const result = await this.quizResultRepository.findOne({
+    const quizResult = await this.quizResultRepository.findOne({
       where: { id: resultId },
       relations: ['user', 'quiz', 'company'],
     });
 
-    if (!result) {
+    if (!quizResult) {
       throw new HttpException('Quiz result not found', HttpStatus.NOT_FOUND);
     }
 
-    if (result.user.id !== userId) {
+    if (quizResult.user.id !== userId) {
       throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
     }
 
-    await this.cacheService.set(`quizResult${resultId}`, result, {
+    await this.cacheService.set(`quizResult${resultId}`, quizResult, {
       ttl: TWO_DAYS_IN_SECONDS,
     });
 
     this.logger.log(`Get quiz result from DB for user id:${userId}`);
 
-    return result;
+    return quizResult;
   }
 }
