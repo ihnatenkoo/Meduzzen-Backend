@@ -12,3 +12,5 @@ export interface IQuizResultDetail {
   correctAnswer: string;
   isCorrect: boolean;
 }
+
+export type FileType = 'json' | 'csv';

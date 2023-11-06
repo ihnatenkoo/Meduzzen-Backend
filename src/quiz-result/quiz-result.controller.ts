@@ -7,19 +7,21 @@ import {
   Res,
   UseGuards,
   UsePipes,
+  Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Response } from 'express';
 import { createReadStream, promises } from 'fs';
 import { join } from 'path';
+import * as json2csv from 'json2csv';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { User } from 'src/decorators/user.decorator';
 import { DtoValidationPipe } from 'src/pipes/dtoValidation.pipe';
 import { IdValidationPipe } from 'src/pipes/idValidationPipe';
 import { CreateQuizResultDto } from './dto/createQuizResult.dto';
 import { UserEntity } from 'src/user/user.entity';
-import { ICreateQuizResult } from './interfaces';
+import { FileType, ICreateQuizResult } from './interfaces';
 import { QuizResultService } from './quiz-result.service';
-import { Response } from 'express';
 
 @ApiBearerAuth()
 @ApiTags('quiz')
@@ -38,12 +40,13 @@ export class QuizResultController {
     return this.quizResultService.createQuizResult(user, crateQuizResultDto);
   }
 
-  @ApiOperation({ summary: 'Get quiz result by ID' })
-  @Get(':id')
+  @ApiOperation({ summary: 'Download quiz result by ID in formats: json, csv' })
+  @Get('download/:id')
   @UseGuards(AuthGuard)
-  async getQuizResult(
+  async downloadQuizResult(
     @User('id') userId: number,
     @Param('id', IdValidationPipe) resultId: number,
+    @Query('type') type: FileType,
     @Res() response: Response,
   ) {
     const data = await this.quizResultService.getQuizResult(userId, resultId);
@@ -52,19 +55,21 @@ export class QuizResultController {
     const directoryPath = join(process.cwd(), 'files');
     const filePath = join(directoryPath, fileName);
 
-    await promises.mkdir(directoryPath, { recursive: true });
-    await promises.writeFile(filePath, JSON.stringify(data));
+    const file = type === 'json' ? JSON.stringify(data) : json2csv.parse(data);
 
-    const file = createReadStream(filePath);
+    await promises.mkdir(directoryPath, { recursive: true });
+    await promises.writeFile(filePath, file);
+
+    const fileStream = createReadStream(filePath);
 
     response.set({
-      'Content-Type': 'application/json',
+      'Content-Type': `${type === 'json' ? 'application/json' : 'text/csv'}`,
       'Content-Disposition': `attachment; filename="${fileName}"`,
     });
 
-    file.pipe(response);
+    fileStream.pipe(response);
 
-    file.on('close', async () => {
+    fileStream.on('close', async () => {
       await promises.unlink(filePath);
     });
   }
