@@ -9,5 +9,6 @@ export interface ICreateQuizResult {
 export interface IQuizResultDetail {
   question: string;
   answer: string;
+  correctAnswer: string;
   isCorrect: boolean;
 }

@@ -14,6 +14,7 @@ import { QuizEntity } from 'src/quiz/quiz.entity';
 import { QuizResultEntity } from './quiz-result.entity';
 import { UserEntity } from 'src/user/user.entity';
 import { ICreateQuizResult, IQuizResultDetail } from './interfaces';
+import { isUserAdmin } from 'src/utils/isUserAdmin';
 import {
   ACCESS_DENIED,
   QUIZ_NOT_FOUND,
@@ -71,6 +72,7 @@ export class QuizResultService {
     const details: IQuizResultDetail[] = quiz.questions.map((question) => {
       const userAnswerIndex = userAnswersNormalize[question.id];
       const userAnswerValue = question.answers[userAnswerIndex];
+      const correctAnswer = question.answers[question.correctAnswerIndex];
       let isCorrect = false;
 
       if (question.correctAnswerIndex === userAnswerIndex) {
@@ -81,6 +83,7 @@ export class QuizResultService {
       return {
         question: question.question,
         answer: userAnswerValue,
+        correctAnswer,
         isCorrect,
       };
     });
@@ -99,7 +102,7 @@ export class QuizResultService {
 
     const quizResult = await this.quizResultRepository.findOne({
       where: { id: newQuizResult.id },
-      relations: ['user', 'quiz', 'company'],
+      relations: ['user', 'quiz', 'company.owner', 'company.admins'],
     });
 
     await this.cacheService.set(`quizResult${quizResult.id}`, quizResult, {
@@ -117,25 +120,34 @@ export class QuizResultService {
     );
 
     if (cachedQuizResult) {
-      if (cachedQuizResult.user.id !== userId) {
+      if (
+        cachedQuizResult.user.id !== userId &&
+        !isUserAdmin(userId, cachedQuizResult.company)
+      ) {
         throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
       }
 
       this.logger.log(`Get quiz result from cache for user id:${userId}`);
+
+      delete cachedQuizResult.company.owner;
+      delete cachedQuizResult.company.admins;
 
       return cachedQuizResult;
     }
 
     const quizResult = await this.quizResultRepository.findOne({
       where: { id: resultId },
-      relations: ['user', 'quiz', 'company'],
+      relations: ['user', 'quiz', 'company.owner', 'company.admins'],
     });
 
     if (!quizResult) {
       throw new HttpException('Quiz result not found', HttpStatus.NOT_FOUND);
     }
 
-    if (quizResult.user.id !== userId) {
+    if (
+      quizResult.user.id !== userId &&
+      !isUserAdmin(userId, quizResult.company)
+    ) {
       throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
     }
 
@@ -144,6 +156,9 @@ export class QuizResultService {
     });
 
     this.logger.log(`Get quiz result from DB for user id:${userId}`);
+
+    delete quizResult.company.owner;
+    delete quizResult.company.admins;
 
     return quizResult;
   }
