@@ -10,6 +10,7 @@ import {
   UseGuards,
   UsePipes,
 } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { User } from 'src/decorators/user.decorator';
 import { DtoValidationPipe } from 'src/pipes/dtoValidation.pipe';
@@ -27,10 +28,13 @@ import { JoinRequestEntity } from 'src/joinRequest/joinRequest.entity';
 import { QuizEntity } from 'src/quiz/quiz.entity';
 import { CompanyService } from './company.service';
 
+@ApiBearerAuth()
+@ApiTags('company')
 @Controller('company')
 export class CompanyController {
   constructor(private readonly companyService: CompanyService) {}
 
+  @ApiOperation({ summary: 'Get all companies list' })
   @Get('list')
   async getAllCompanies(
     @Query() query: PageOptionsDto,
@@ -38,6 +42,16 @@ export class CompanyController {
     return this.companyService.getAllCompanies(query);
   }
 
+  @ApiOperation({ summary: 'Get company by ID' })
+  @Get(':id')
+  @UseGuards(AuthGuard)
+  async findCompanyById(
+    @Param('id', IdValidationPipe) id: number,
+  ): Promise<ICompanyResponse> {
+    return this.companyService.findCompanyById(id);
+  }
+
+  @ApiOperation({ summary: 'Get company admins list' })
   @Get('admins-list/:companyId')
   @UseGuards(AuthGuard)
   async getAdminsList(
@@ -48,6 +62,7 @@ export class CompanyController {
     return this.companyService.getAdminsList(companyId);
   }
 
+  @ApiOperation({ summary: 'Get company quizzes list' })
   @Get('quizzes-list/:companyId')
   @UseGuards(AuthGuard)
   async getQuizzesList(
@@ -58,6 +73,7 @@ export class CompanyController {
     return this.companyService.getQuizzesList(companyId);
   }
 
+  @ApiOperation({ summary: 'Get company invitations list' })
   @Get('invitations/:companyId')
   @UseGuards(AuthGuard)
   async getInvitations(
@@ -69,6 +85,7 @@ export class CompanyController {
     return this.companyService.getInvitations(userId, companyId);
   }
 
+  @ApiOperation({ summary: 'Get company join-requests list' })
   @Get('join-requests/:companyId')
   @UseGuards(AuthGuard)
   async getJoinRequests(
@@ -80,6 +97,7 @@ export class CompanyController {
     return this.companyService.getJoinRequests(userId, companyId);
   }
 
+  @ApiOperation({ summary: 'Get company members list' })
   @Get('members/:companyId')
   @UseGuards(AuthGuard)
   async getAllMembers(
@@ -88,24 +106,18 @@ export class CompanyController {
     return this.companyService.getAllMembers(companyId);
   }
 
-  @Get(':companyId/add-admin/:adminId')
+  @ApiOperation({ summary: 'Add admin in company' })
+  @Get(':companyId/add-admin/:candidateId')
   @UseGuards(AuthGuard)
   async addAdmin(
     @User('id') ownerId: number,
     @Param('companyId', IdValidationPipe) companyId: number,
-    @Param('adminId', IdValidationPipe) adminId: number,
+    @Param('candidateId', IdValidationPipe) candidateId: number,
   ): Promise<IMessage> {
-    return this.companyService.addAdmin(ownerId, companyId, adminId);
+    return this.companyService.addAdmin(ownerId, companyId, candidateId);
   }
 
-  @Get(':id')
-  @UseGuards(AuthGuard)
-  async findCompanyById(
-    @Param('id', IdValidationPipe) id: number,
-  ): Promise<ICompanyResponse> {
-    return this.companyService.findCompanyById(id);
-  }
-
+  @ApiOperation({ summary: 'Create company' })
   @Post('create')
   @UseGuards(AuthGuard)
   @UsePipes(new DtoValidationPipe())
@@ -116,6 +128,7 @@ export class CompanyController {
     return this.companyService.createCompany(userId, createCompanyDto);
   }
 
+  @ApiOperation({ summary: 'Change company visibility' })
   @Post('change-visibility/:id')
   @UseGuards(AuthGuard)
   @UsePipes(new DtoValidationPipe())
@@ -131,6 +144,7 @@ export class CompanyController {
     );
   }
 
+  @ApiOperation({ summary: 'Update company information' })
   @Patch(':id')
   @UseGuards(AuthGuard)
   @UsePipes(new DtoValidationPipe())
@@ -146,6 +160,7 @@ export class CompanyController {
     );
   }
 
+  @ApiOperation({ summary: 'Remove member from company' })
   @Delete(':companyId/member/:memberId')
   @UseGuards(AuthGuard)
   async removeMember(
@@ -156,6 +171,7 @@ export class CompanyController {
     return this.companyService.removeMember(ownerId, companyId, memberId);
   }
 
+  @ApiOperation({ summary: 'Remove admin from company' })
   @Delete(':companyId/admin/:adminId')
   @UseGuards(AuthGuard)
   async removeAdmin(
@@ -166,6 +182,7 @@ export class CompanyController {
     return this.companyService.removeAdmin(ownerId, companyId, adminId);
   }
 
+  @ApiOperation({ summary: 'Leave from company' })
   @Delete('leave/:companyId')
   @UseGuards(AuthGuard)
   async leaveCompany(
@@ -175,6 +192,7 @@ export class CompanyController {
     return this.companyService.leaveCompany(memberId, companyId);
   }
 
+  @ApiOperation({ summary: 'Delete company' })
   @Delete(':id')
   @UseGuards(AuthGuard)
   async deleteCompany(

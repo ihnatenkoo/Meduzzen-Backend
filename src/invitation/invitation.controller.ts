@@ -1,12 +1,15 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  HttpCode,
   Param,
   Post,
   UseGuards,
   UsePipes,
 } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { User } from 'src/decorators/user.decorator';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { DtoValidationPipe } from 'src/pipes/dtoValidation.pipe';
@@ -17,11 +20,23 @@ import { RespondInvitationDto } from './dto/respondInvitation.dto';
 import { InvitationEntity } from './invitation.entity';
 import { InvitationService } from './invitation.service';
 
+@ApiBearerAuth()
+@ApiTags('invitation')
 @Controller('invitation')
 export class InvitationController {
   constructor(private readonly invitationService: InvitationService) {}
 
-  @Post()
+  @ApiOperation({ summary: 'Get all user invitations' })
+  @Get('list')
+  @UseGuards(AuthGuard)
+  async getInvitations(
+    @User('id') userId: number,
+  ): Promise<{ invitations: InvitationEntity[] }> {
+    return this.invitationService.getInvitations(userId);
+  }
+
+  @ApiOperation({ summary: 'Create invitation to company' })
+  @Post('create')
   @UseGuards(AuthGuard)
   @UsePipes(new DtoValidationPipe())
   async createInvitation(
@@ -31,24 +46,9 @@ export class InvitationController {
     return this.invitationService.createInvitation(userId, createInvitationDto);
   }
 
-  @Get('list')
-  @UseGuards(AuthGuard)
-  async getInvitations(
-    @User('id') userId: number,
-  ): Promise<{ invitations: InvitationEntity[] }> {
-    return this.invitationService.getInvitations(userId);
-  }
-
-  @Get(':id')
-  @UseGuards(AuthGuard)
-  async cancelInvitation(
-    @User('id') userId: number,
-    @Param('id', IdValidationPipe) invitationId: number,
-  ): Promise<IMessage> {
-    return this.invitationService.cancelInvitation(userId, invitationId);
-  }
-
+  @ApiOperation({ summary: 'Respond invitation by ID' })
   @Post('/respond/:id')
+  @HttpCode(200)
   @UseGuards(AuthGuard)
   @UsePipes(new DtoValidationPipe())
   async respondToInvitation(
@@ -61,5 +61,15 @@ export class InvitationController {
       invitationId,
       respondDto,
     );
+  }
+
+  @ApiOperation({ summary: 'Cancel invitation by ID' })
+  @Delete(':id')
+  @UseGuards(AuthGuard)
+  async cancelInvitation(
+    @User('id') userId: number,
+    @Param('id', IdValidationPipe) invitationId: number,
+  ): Promise<IMessage> {
+    return this.invitationService.cancelInvitation(userId, invitationId);
   }
 }
