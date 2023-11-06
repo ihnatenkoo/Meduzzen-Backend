@@ -20,7 +20,7 @@ import { UpdateUserDto } from './dto/updateUser.dto';
 import { UserService } from './user.service';
 import { UserEntity } from './user.entity';
 import { IMessage } from 'src/types';
-import { IUserResponse } from './types/user-response.interface';
+import { IUserResponse } from './types';
 
 @ApiBearerAuth()
 @ApiTags('user')
@@ -35,6 +35,27 @@ export class UserController {
     @Query() query: PageOptionsDto,
   ): Promise<PageDto<UserEntity>> {
     return this.userService.getAllUsers(query);
+  }
+
+  @ApiOperation({
+    summary: 'Get user rating in the app',
+  })
+  @Get('/ratio')
+  @UseGuards(AuthGuard)
+  async getUserRatioInApp(@User('id') userId: number) {
+    return this.userService.getUserRatio(userId);
+  }
+
+  @ApiOperation({
+    summary: 'Get user rating in the company',
+  })
+  @Get('/ratio/:companyId')
+  @UseGuards(AuthGuard)
+  async getUserRatioInCompany(
+    @User('id') userId: number,
+    @Param('companyId', IdValidationPipe) companyId: number,
+  ) {
+    return this.userService.getUserRatio(userId, companyId);
   }
 
   @ApiOperation({ summary: 'Get user by ID' })

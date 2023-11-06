@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Delete,
+  Get,
   Param,
   Patch,
   Post,
@@ -23,6 +24,15 @@ import { QuizService } from './quiz.service';
 @Controller('quiz')
 export class QuizController {
   constructor(private readonly quizService: QuizService) {}
+
+  @ApiOperation({ summary: 'Get quiz by ID' })
+  @Get(':id')
+  @UseGuards(AuthGuard)
+  async getQuiz(@Param('id', IdValidationPipe) quizId: number): Promise<{
+    quiz: QuizEntity;
+  }> {
+    return this.quizService.getQuiz(quizId);
+  }
 
   @ApiOperation({ summary: 'Create quiz in company' })
   @Post('create/:companyId')

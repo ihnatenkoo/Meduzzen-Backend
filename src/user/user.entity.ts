@@ -1,6 +1,7 @@
 import { CompanyEntity } from 'src/company/company.entity';
 import { InvitationEntity } from 'src/invitation/invitation.entity';
 import { JoinRequestEntity } from 'src/joinRequest/joinRequest.entity';
+import { QuizResultEntity } from 'src/quiz-result/quiz-result.entity';
 import {
   Column,
   Entity,
@@ -41,6 +42,9 @@ export class UserEntity {
 
   @OneToMany(() => JoinRequestEntity, (joinRequest) => joinRequest.sender)
   sentJoinRequests: JoinRequestEntity[];
+
+  @OneToMany(() => QuizResultEntity, (quiz) => quiz.user)
+  completedQuizzes: QuizResultEntity[];
 
   @ManyToMany(() => CompanyEntity, (company) => company.members)
   memberInCompanies: CompanyEntity[];

@@ -23,6 +23,31 @@ export class QuizService {
     private readonly companyRepository: Repository<CompanyEntity>,
   ) {}
 
+  async getQuiz(quizId: number): Promise<{
+    quiz: QuizEntity;
+  }> {
+    const quiz = await this.quizRepository
+      .createQueryBuilder('quiz')
+      .leftJoinAndSelect('quiz.questions', 'questions')
+      .select([
+        'quiz.id',
+        'quiz.name',
+        'quiz.description',
+        'quiz.frequency',
+        'questions.id',
+        'questions.question',
+        'questions.answers',
+      ])
+      .where('quiz.id = :quizId', { quizId })
+      .getOne();
+
+    if (!quiz) {
+      throw new HttpException(QUIZ_NOT_FOUND, HttpStatus.NOT_FOUND);
+    }
+
+    return { quiz };
+  }
+
   async createQuiz(
     userId: number,
     companyId: number,

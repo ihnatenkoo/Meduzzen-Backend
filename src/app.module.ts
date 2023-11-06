@@ -15,6 +15,7 @@ import { InvitationModule } from './invitation/invitation.module';
 import { JoinRequestModule } from './joinRequest/joinRequest.module';
 import { QuizModule } from './quiz/quiz.module';
 import { QuestionModule } from './question/question.module';
+import { QuizResultModule } from './quiz-result/quiz-result.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { QuestionModule } from './question/question.module';
     JoinRequestModule,
     QuizModule,
     QuestionModule,
+    QuizResultModule,
   ],
   controllers: [AppController],
   providers: [AppService],

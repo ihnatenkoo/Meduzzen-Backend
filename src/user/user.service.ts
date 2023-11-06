@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { PageOptionsDto } from 'src/pagination/dto/page-options.dto';
 import { PageDto } from 'src/pagination/dto/page.dto';
 import { UpdateUserDto } from './dto/updateUser.dto';
-import { IUserResponse } from './types/user-response.interface';
+import { IUserResponse } from './types';
 import { IMessage } from 'src/types';
 import { UserEntity } from './user.entity';
 import { paginate } from 'src/pagination/paginate';
@@ -79,5 +79,33 @@ export class UserService {
     this.logger.log(`${USER_DELETED_SUCCESSFULLY}. Email: ${user.email}`);
 
     return { message: USER_DELETED_SUCCESSFULLY };
+  }
+
+  async getUserRatio(userId: number, companyId?: number) {
+    const queryBuilder = this.userRepository
+      .createQueryBuilder('user')
+      .where('user.id = :userId', { userId });
+
+    if (companyId) {
+      queryBuilder.andWhere('completedQuizzes.company_id = :companyId', {
+        companyId,
+      });
+    }
+
+    queryBuilder
+      .leftJoinAndSelect('user.completedQuizzes', 'completedQuizzes')
+      .select('SUM(completedQuizzes.correctAnswers)', 'totalCorrectAnswers')
+      .addSelect('SUM(completedQuizzes.totalQuestions)', 'totalQuestions');
+
+    const { totalQuestions, totalCorrectAnswers } =
+      await queryBuilder.getRawOne();
+
+    if (!totalQuestions || !totalCorrectAnswers) {
+      throw new HttpException('Rating not available', HttpStatus.BAD_REQUEST);
+    }
+
+    const ratio = +(totalCorrectAnswers / totalQuestions).toFixed(3);
+
+    return { userId, ratio };
   }
 }
