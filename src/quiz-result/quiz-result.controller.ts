@@ -4,10 +4,13 @@ import {
   Get,
   Param,
   Post,
+  Res,
   UseGuards,
   UsePipes,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { createReadStream, promises } from 'fs';
+import { join } from 'path';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { User } from 'src/decorators/user.decorator';
 import { DtoValidationPipe } from 'src/pipes/dtoValidation.pipe';
@@ -16,6 +19,7 @@ import { CreateQuizResultDto } from './dto/createQuizResult.dto';
 import { UserEntity } from 'src/user/user.entity';
 import { ICreateQuizResult } from './interfaces';
 import { QuizResultService } from './quiz-result.service';
+import { Response } from 'express';
 
 @ApiBearerAuth()
 @ApiTags('quiz')
@@ -40,7 +44,28 @@ export class QuizResultController {
   async getQuizResult(
     @User('id') userId: number,
     @Param('id', IdValidationPipe) resultId: number,
+    @Res() response: Response,
   ) {
-    return this.quizResultService.getQuizResult(userId, resultId);
+    const data = await this.quizResultService.getQuizResult(userId, resultId);
+
+    const fileName = `quiz-result-${resultId}.json`;
+    const directoryPath = join(process.cwd(), 'files');
+    const filePath = join(directoryPath, fileName);
+
+    await promises.mkdir(directoryPath, { recursive: true });
+    await promises.writeFile(filePath, JSON.stringify(data));
+
+    const file = createReadStream(filePath);
+
+    response.set({
+      'Content-Type': 'application/json',
+      'Content-Disposition': `attachment; filename="${fileName}"`,
+    });
+
+    file.pipe(response);
+
+    file.on('close', async () => {
+      await promises.unlink(filePath);
+    });
   }
 }
