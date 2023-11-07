@@ -2,12 +2,13 @@ import {
   Body,
   Controller,
   Get,
-  Param,
   Post,
   Res,
   UseGuards,
   UsePipes,
   Query,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
@@ -40,37 +41,49 @@ export class QuizResultController {
     return this.quizResultService.createQuizResult(user, crateQuizResultDto);
   }
 
-  @ApiOperation({ summary: 'Download quiz result by ID in formats: json, csv' })
-  @Get('download/:id')
+  @ApiOperation({
+    summary: 'Download quiz result by user in formats: json,csv',
+  })
+  @Get('download')
   @UseGuards(AuthGuard)
   async downloadQuizResult(
     @User('id') userId: number,
-    @Param('id', IdValidationPipe) resultId: number,
+    @Query('quizId', IdValidationPipe) quizId: number,
+    @Query('candidateId', IdValidationPipe) candidateId: number,
     @Query('type') type: FileType,
     @Res() response: Response,
   ) {
-    const data = await this.quizResultService.getQuizResult(userId, resultId);
+    const data = await this.quizResultService.getQuizResult(
+      userId,
+      quizId,
+      candidateId,
+    );
 
-    const fileName = `quiz-result-${resultId}.json`;
-    const directoryPath = join(process.cwd(), 'files');
-    const filePath = join(directoryPath, fileName);
+    try {
+      const fileName = `result-user-${candidateId}-quiz-${quizId}`;
+      const directoryPath = join(process.cwd(), 'files');
+      const filePath = join(directoryPath, fileName);
 
-    const file = type === 'json' ? JSON.stringify(data) : json2csv.parse(data);
+      const file =
+        type === 'json' ? JSON.stringify(data) : json2csv.parse(data);
 
-    await promises.mkdir(directoryPath, { recursive: true });
-    await promises.writeFile(filePath, file);
+      await promises.mkdir(directoryPath, { recursive: true });
+      await promises.writeFile(filePath, file);
 
-    const fileStream = createReadStream(filePath);
+      const fileStream = createReadStream(filePath);
 
-    response.set({
-      'Content-Type': `${type === 'json' ? 'application/json' : 'text/csv'}`,
-      'Content-Disposition': `attachment; filename="${fileName}"`,
-    });
+      response.set({
+        'Content-Type': `${type === 'json' ? 'application/json' : 'text/csv'}`,
+        'Content-Disposition': `attachment; filename="${fileName}"`,
+      });
 
-    fileStream.pipe(response);
+      fileStream.pipe(response);
 
-    fileStream.on('close', async () => {
-      await promises.unlink(filePath);
-    });
+      fileStream.on('close', async () => {
+        await promises.unlink(filePath);
+      });
+    } catch (error) {
+      throw new HttpException(error?.message, HttpStatus.BAD_REQUEST);
+    }
   }
 }

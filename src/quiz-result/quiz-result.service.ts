@@ -39,7 +39,13 @@ export class QuizResultService {
   ): Promise<ICreateQuizResult> {
     const quiz = await this.quizRepository.findOne({
       where: { id: quizId },
-      relations: ['questions', 'company.members'],
+      relations: [
+        'questions',
+        'completedQuizzes.user',
+        'company.members',
+        'company.owner',
+        'company.admins',
+      ],
     });
 
     if (!quiz) {
@@ -49,6 +55,13 @@ export class QuizResultService {
     if (!quiz.company.members.some((member) => member.id === user.id)) {
       throw new HttpException(
         `You are not a member in company id:${quiz.company.id}`,
+        HttpStatus.FORBIDDEN,
+      );
+    }
+
+    if (quiz.completedQuizzes.some((quiz) => quiz.user.id === user.id)) {
+      throw new HttpException(
+        'You already passed this quiz',
         HttpStatus.FORBIDDEN,
       );
     }
@@ -90,7 +103,7 @@ export class QuizResultService {
 
     const ratio = +(correctAnswers / totalQuestions).toFixed(2);
 
-    const newQuizResult = await this.quizResultRepository.save({
+    const resultData = {
       user,
       quiz,
       company: quiz.company,
@@ -98,14 +111,15 @@ export class QuizResultService {
       totalQuestions,
       ratio,
       details,
-    });
+    };
 
-    const quizResult = await this.quizResultRepository.findOne({
-      where: { id: newQuizResult.id },
-      relations: ['user', 'quiz', 'company.owner', 'company.admins'],
-    });
+    await this.quizResultRepository.save(resultData);
 
-    await this.cacheService.set(`quizResult${quizResult.id}`, quizResult, {
+    delete resultData.quiz.questions;
+    delete resultData.quiz.company;
+    delete resultData.company.members;
+
+    await this.cacheService.set(`quiz-${quizId}-user-${user.id}`, resultData, {
       ttl: TWO_DAYS_IN_SECONDS,
     });
 
@@ -114,51 +128,62 @@ export class QuizResultService {
     return { result: { totalQuestions, correctAnswers, ratio } };
   }
 
-  async getQuizResult(userId: number, resultId: number) {
+  async getQuizResult(userId: number, quizId: number, candidateId: number) {
     const cachedQuizResult = await this.cacheService.get<QuizResultEntity>(
-      `quizResult${resultId}`,
+      `quiz-${quizId}-user-${candidateId}`,
     );
 
     if (cachedQuizResult) {
       if (
-        cachedQuizResult.user.id !== userId &&
+        userId !== candidateId &&
         !isUserAdmin(userId, cachedQuizResult.company)
       ) {
         throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
       }
 
-      this.logger.log(`Get quiz result from cache for user id:${userId}`);
+      this.logger.log(`Get quiz result from cache for user id:${candidateId}`);
 
-      delete cachedQuizResult.company.owner;
-      delete cachedQuizResult.company.admins;
+      delete cachedQuizResult.company?.owner;
+      delete cachedQuizResult.company?.admins;
 
       return cachedQuizResult;
     }
 
-    const quizResult = await this.quizResultRepository.findOne({
-      where: { id: resultId },
-      relations: ['user', 'quiz', 'company.owner', 'company.admins'],
+    const quiz = await this.quizRepository.findOne({
+      where: { id: quizId },
+      relations: [
+        'completedQuizzes.user',
+        'completedQuizzes.company.owner',
+        'completedQuizzes.company.admins',
+        'company.owner',
+        'company.admins',
+      ],
     });
+
+    const quizResult = quiz?.completedQuizzes?.find(
+      (quiz) => quiz.user.id === candidateId,
+    );
 
     if (!quizResult) {
       throw new HttpException('Quiz result not found', HttpStatus.NOT_FOUND);
     }
 
-    if (
-      quizResult.user.id !== userId &&
-      !isUserAdmin(userId, quizResult.company)
-    ) {
+    if (userId !== candidateId && !isUserAdmin(userId, quiz.company)) {
       throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
     }
 
-    await this.cacheService.set(`quizResult${resultId}`, quizResult, {
-      ttl: TWO_DAYS_IN_SECONDS,
-    });
+    await this.cacheService.set(
+      `quiz-${quizId}-user-${candidateId}`,
+      quizResult,
+      {
+        ttl: TWO_DAYS_IN_SECONDS,
+      },
+    );
 
-    this.logger.log(`Get quiz result from DB for user id:${userId}`);
+    this.logger.log(`Get quiz result from DB for user id:${candidateId}`);
 
-    delete quizResult.company.owner;
-    delete quizResult.company.admins;
+    delete quizResult.company?.owner;
+    delete quizResult.company?.admins;
 
     return quizResult;
   }
