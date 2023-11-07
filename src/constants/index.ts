@@ -1,3 +1,4 @@
+export const TWO_DAYS_IN_SECONDS = 172800;
 export const USER_NOT_FOUND = 'User not found';
 export const COMPANY_NOT_FOUND = 'Company not found';
 export const QUIZ_NOT_FOUND = 'Quiz not found';

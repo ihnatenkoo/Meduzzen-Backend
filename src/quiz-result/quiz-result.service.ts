@@ -1,20 +1,35 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Inject,
+  Injectable,
+  Logger,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 import { Repository } from 'typeorm';
 import { CreateQuizResultDto } from './dto/createQuizResult.dto';
 import { QuizEntity } from 'src/quiz/quiz.entity';
 import { QuizResultEntity } from './quiz-result.entity';
 import { UserEntity } from 'src/user/user.entity';
 import { ICreateQuizResult, IQuizResultDetail } from './interfaces';
-import { QUIZ_NOT_FOUND } from 'src/constants';
+import {
+  ACCESS_DENIED,
+  QUIZ_NOT_FOUND,
+  TWO_DAYS_IN_SECONDS,
+} from 'src/constants';
 
 @Injectable()
 export class QuizResultService {
+  private readonly logger = new Logger(QuizResultService.name);
+
   constructor(
     @InjectRepository(QuizEntity)
     private readonly quizRepository: Repository<QuizEntity>,
     @InjectRepository(QuizResultEntity)
     private readonly quizResultRepository: Repository<QuizResultEntity>,
+    @Inject(CACHE_MANAGER) private readonly cacheService: Cache,
   ) {}
 
   async createQuizResult(
@@ -72,7 +87,7 @@ export class QuizResultService {
 
     const ratio = +(correctAnswers / totalQuestions).toFixed(2);
 
-    await this.quizResultRepository.save({
+    const newQuizResult = await this.quizResultRepository.save({
       user,
       quiz,
       company: quiz.company,
@@ -82,6 +97,54 @@ export class QuizResultService {
       details,
     });
 
+    const quizResult = await this.quizResultRepository.findOne({
+      where: { id: newQuizResult.id },
+      relations: ['user', 'quiz', 'company'],
+    });
+
+    await this.cacheService.set(`quizResult${quizResult.id}`, quizResult, {
+      ttl: TWO_DAYS_IN_SECONDS,
+    });
+
+    this.logger.log(`Created quiz result for user id:${user.id}`);
+
     return { result: { totalQuestions, correctAnswers, ratio } };
+  }
+
+  async getQuizResult(userId: number, resultId: number) {
+    const cachedQuizResult = await this.cacheService.get<QuizResultEntity>(
+      `quizResult${resultId}`,
+    );
+
+    if (cachedQuizResult) {
+      if (cachedQuizResult.user.id !== userId) {
+        throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
+      }
+
+      this.logger.log(`Get quiz result from cache for user id:${userId}`);
+
+      return cachedQuizResult;
+    }
+
+    const quizResult = await this.quizResultRepository.findOne({
+      where: { id: resultId },
+      relations: ['user', 'quiz', 'company'],
+    });
+
+    if (!quizResult) {
+      throw new HttpException('Quiz result not found', HttpStatus.NOT_FOUND);
+    }
+
+    if (quizResult.user.id !== userId) {
+      throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
+    }
+
+    await this.cacheService.set(`quizResult${resultId}`, quizResult, {
+      ttl: TWO_DAYS_IN_SECONDS,
+    });
+
+    this.logger.log(`Get quiz result from DB for user id:${userId}`);
+
+    return quizResult;
   }
 }
