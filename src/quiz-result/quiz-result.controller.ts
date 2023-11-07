@@ -132,4 +132,46 @@ export class QuizResultController {
       throw new HttpException(error?.message, HttpStatus.BAD_REQUEST);
     }
   }
+
+  @ApiOperation({
+    summary: 'Download quiz results by quizId in formats: json,csv',
+  })
+  @Get('download/quiz/:quizId')
+  @UseGuards(AuthGuard)
+  async uploadQuizResult(
+    @User('id') userId: number,
+    @Param('quizId', IdValidationPipe) quizId: number,
+    @Query('type')
+    type: FileType,
+    @Res() response: Response,
+  ) {
+    const data = await this.quizResultService.getQuizResults(userId, quizId);
+
+    try {
+      const fileName = `result-quiz-${quizId}`;
+      const directoryPath = join(process.cwd(), 'files');
+      const filePath = join(directoryPath, fileName);
+
+      const file =
+        type === 'json' ? JSON.stringify(data) : json2csv.parse(data);
+
+      await promises.mkdir(directoryPath, { recursive: true });
+      await promises.writeFile(filePath, file);
+
+      const fileStream = createReadStream(filePath);
+
+      response.set({
+        'Content-Type': `${type === 'json' ? 'application/json' : 'text/csv'}`,
+        'Content-Disposition': `attachment; filename="${fileName}"`,
+      });
+
+      fileStream.pipe(response);
+
+      fileStream.on('close', async () => {
+        await promises.unlink(filePath);
+      });
+    } catch (error) {
+      throw new HttpException(error?.message, HttpStatus.BAD_REQUEST);
+    }
+  }
 }

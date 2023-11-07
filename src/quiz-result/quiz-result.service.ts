@@ -230,4 +230,46 @@ export class QuizResultService {
 
     return { company };
   }
+
+  async getQuizResults(userId: number, quizId: number) {
+    const cacheKey = `quiz-${quizId}`;
+
+    const cachedQuizResult =
+      await this.cacheService.get<QuizResultEntity>(cacheKey);
+
+    if (cachedQuizResult) {
+      if (!isUserAdmin(userId, cachedQuizResult.quiz.company)) {
+        throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
+      }
+
+      this.logger.log(`Get quiz result from cache for quiz id:${quizId}`);
+
+      return cachedQuizResult;
+    }
+
+    const quiz = await this.quizRepository.findOne({
+      where: { id: quizId },
+      relations: ['completedQuizzes', 'company.owner', 'company.admins'],
+    });
+
+    if (!quiz) {
+      throw new HttpException(QUIZ_NOT_FOUND, HttpStatus.NOT_FOUND);
+    }
+
+    if (!isUserAdmin(userId, quiz.company)) {
+      throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
+    }
+
+    await this.cacheService.set(
+      cacheKey,
+      { quiz },
+      {
+        ttl: TWO_DAYS_IN_SECONDS,
+      },
+    );
+
+    this.logger.log(`Get quiz result from DB for quiz id:${quizId}`);
+
+    return { quiz };
+  }
 }
