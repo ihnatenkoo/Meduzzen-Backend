@@ -17,15 +17,19 @@ import { ICreateQuizResult, IQuizResultDetail } from './interfaces';
 import { isUserAdmin } from 'src/utils/isUserAdmin';
 import {
   ACCESS_DENIED,
+  COMPANY_NOT_FOUND,
   QUIZ_NOT_FOUND,
   TWO_DAYS_IN_SECONDS,
 } from 'src/constants';
+import { CompanyEntity } from 'src/company/company.entity';
 
 @Injectable()
 export class QuizResultService {
   private readonly logger = new Logger(QuizResultService.name);
 
   constructor(
+    @InjectRepository(CompanyEntity)
+    private readonly companyRepository: Repository<CompanyEntity>,
     @InjectRepository(QuizEntity)
     private readonly quizRepository: Repository<QuizEntity>,
     @InjectRepository(QuizResultEntity)
@@ -128,10 +132,11 @@ export class QuizResultService {
     return { result: { totalQuestions, correctAnswers, ratio } };
   }
 
-  async getQuizResult(userId: number, quizId: number, candidateId: number) {
-    const cachedQuizResult = await this.cacheService.get<QuizResultEntity>(
-      `quiz-${quizId}-user-${candidateId}`,
-    );
+  async getUserQuizResult(userId: number, quizId: number, candidateId: number) {
+    const cacheKey = `quiz-${quizId}-user-${candidateId}`;
+
+    const cachedQuizResult =
+      await this.cacheService.get<QuizResultEntity>(cacheKey);
 
     if (cachedQuizResult) {
       if (
@@ -172,13 +177,9 @@ export class QuizResultService {
       throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
     }
 
-    await this.cacheService.set(
-      `quiz-${quizId}-user-${candidateId}`,
-      quizResult,
-      {
-        ttl: TWO_DAYS_IN_SECONDS,
-      },
-    );
+    await this.cacheService.set(cacheKey, quizResult, {
+      ttl: TWO_DAYS_IN_SECONDS,
+    });
 
     this.logger.log(`Get quiz result from DB for user id:${candidateId}`);
 
@@ -186,5 +187,47 @@ export class QuizResultService {
     delete quizResult.company?.admins;
 
     return quizResult;
+  }
+
+  async getCompanyQuizzesResults(userId: number, companyId: number) {
+    const cacheKey = `company-${companyId}-quizzes-results`;
+
+    const cachedQuizResult =
+      await this.cacheService.get<QuizResultEntity>(cacheKey);
+
+    if (cachedQuizResult) {
+      if (!isUserAdmin(userId, cachedQuizResult.company)) {
+        throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
+      }
+
+      this.logger.log(`Get quiz result from cache for company id:${companyId}`);
+
+      return cachedQuizResult;
+    }
+
+    const company = await this.companyRepository.findOne({
+      where: { id: companyId },
+      relations: ['completedQuizzes', 'owner', 'admins'],
+    });
+
+    if (!company) {
+      throw new HttpException(COMPANY_NOT_FOUND, HttpStatus.NOT_FOUND);
+    }
+
+    if (!isUserAdmin(userId, company)) {
+      throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
+    }
+
+    await this.cacheService.set(
+      cacheKey,
+      { company },
+      {
+        ttl: TWO_DAYS_IN_SECONDS,
+      },
+    );
+
+    this.logger.log(`Get quiz result from DB for company id:${companyId}`);
+
+    return { company };
   }
 }

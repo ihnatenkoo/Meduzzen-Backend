@@ -9,6 +9,7 @@ import {
   Query,
   HttpException,
   HttpStatus,
+  Param,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
@@ -46,14 +47,14 @@ export class QuizResultController {
   })
   @Get('download')
   @UseGuards(AuthGuard)
-  async downloadQuizResult(
+  async uploadUserQuizResult(
     @User('id') userId: number,
     @Query('quizId', IdValidationPipe) quizId: number,
     @Query('candidateId', IdValidationPipe) candidateId: number,
     @Query('type') type: FileType,
     @Res() response: Response,
   ) {
-    const data = await this.quizResultService.getQuizResult(
+    const data = await this.quizResultService.getUserQuizResult(
       userId,
       quizId,
       candidateId,
@@ -61,6 +62,51 @@ export class QuizResultController {
 
     try {
       const fileName = `result-user-${candidateId}-quiz-${quizId}`;
+      const directoryPath = join(process.cwd(), 'files');
+      const filePath = join(directoryPath, fileName);
+
+      const file =
+        type === 'json' ? JSON.stringify(data) : json2csv.parse(data);
+
+      await promises.mkdir(directoryPath, { recursive: true });
+      await promises.writeFile(filePath, file);
+
+      const fileStream = createReadStream(filePath);
+
+      response.set({
+        'Content-Type': `${type === 'json' ? 'application/json' : 'text/csv'}`,
+        'Content-Disposition': `attachment; filename="${fileName}"`,
+      });
+
+      fileStream.pipe(response);
+
+      fileStream.on('close', async () => {
+        await promises.unlink(filePath);
+      });
+    } catch (error) {
+      throw new HttpException(error?.message, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  @ApiOperation({
+    summary: 'Download quiz result by company in formats: json,csv',
+  })
+  @Get('download/company/:companyId')
+  @UseGuards(AuthGuard)
+  async uploadCompanyQuizzesResults(
+    @User('id') userId: number,
+    @Param('companyId', IdValidationPipe) companyId: number,
+    @Query('type')
+    type: FileType,
+    @Res() response: Response,
+  ) {
+    const data = await this.quizResultService.getCompanyQuizzesResults(
+      userId,
+      companyId,
+    );
+
+    try {
+      const fileName = `result-quizzes-company-${companyId}`;
       const directoryPath = join(process.cwd(), 'files');
       const filePath = join(directoryPath, fileName);
 
