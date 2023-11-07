@@ -132,7 +132,11 @@ export class QuizResultService {
     return { result: { totalQuestions, correctAnswers, ratio } };
   }
 
-  async getUserQuizResult(userId: number, quizId: number, candidateId: number) {
+  async getUserQuizResult(
+    userId: number,
+    quizId: number,
+    candidateId: number,
+  ): Promise<QuizResultEntity> {
     const cacheKey = `quiz-${quizId}-user-${candidateId}`;
 
     const cachedQuizResult =
@@ -189,11 +193,17 @@ export class QuizResultService {
     return quizResult;
   }
 
-  async getCompanyQuizzesResults(userId: number, companyId: number) {
+  async getCompanyQuizzesResults(
+    userId: number,
+    companyId: number,
+  ): Promise<{
+    company: CompanyEntity;
+  }> {
     const cacheKey = `company-${companyId}-quizzes-results`;
 
-    const cachedQuizResult =
-      await this.cacheService.get<QuizResultEntity>(cacheKey);
+    const cachedQuizResult = await this.cacheService.get<{
+      company: CompanyEntity;
+    }>(cacheKey);
 
     if (cachedQuizResult) {
       if (!isUserAdmin(userId, cachedQuizResult.company)) {
@@ -207,7 +217,7 @@ export class QuizResultService {
 
     const company = await this.companyRepository.findOne({
       where: { id: companyId },
-      relations: ['completedQuizzes', 'owner', 'admins'],
+      relations: ['completedQuizzes.user', 'owner', 'admins'],
     });
 
     if (!company) {
@@ -231,11 +241,15 @@ export class QuizResultService {
     return { company };
   }
 
-  async getQuizResults(userId: number, quizId: number) {
+  async getQuizResults(
+    userId: number,
+    quizId: number,
+  ): Promise<{ quiz: QuizEntity }> {
     const cacheKey = `quiz-${quizId}`;
 
-    const cachedQuizResult =
-      await this.cacheService.get<QuizResultEntity>(cacheKey);
+    const cachedQuizResult = await this.cacheService.get<{ quiz: QuizEntity }>(
+      cacheKey,
+    );
 
     if (cachedQuizResult) {
       if (!isUserAdmin(userId, cachedQuizResult.quiz.company)) {
@@ -249,7 +263,7 @@ export class QuizResultService {
 
     const quiz = await this.quizRepository.findOne({
       where: { id: quizId },
-      relations: ['completedQuizzes', 'company.owner', 'company.admins'],
+      relations: ['completedQuizzes.user', 'company.owner', 'company.admins'],
     });
 
     if (!quiz) {
