@@ -47,7 +47,7 @@ export class QuizResultController {
   })
   @Get('download')
   @UseGuards(AuthGuard)
-  async uploadUserQuizResult(
+  async downloadUserQuizResult(
     @User('id') userId: number,
     @Query('quizId', IdValidationPipe) quizId: number,
     @Query('candidateId', IdValidationPipe) candidateId: number,
@@ -93,7 +93,7 @@ export class QuizResultController {
   })
   @Get('download/company/:companyId')
   @UseGuards(AuthGuard)
-  async uploadCompanyQuizzesResults(
+  async downloadCompanyQuizzesResults(
     @User('id') userId: number,
     @Param('companyId', IdValidationPipe) companyId: number,
     @Query('type')
@@ -138,7 +138,7 @@ export class QuizResultController {
   })
   @Get('download/quiz/:quizId')
   @UseGuards(AuthGuard)
-  async uploadQuizResult(
+  async downloadQuizResult(
     @User('id') userId: number,
     @Param('quizId', IdValidationPipe) quizId: number,
     @Query('type')
