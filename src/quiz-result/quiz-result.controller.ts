@@ -74,7 +74,7 @@ export class QuizResultController {
   }
 
   @ApiOperation({
-    summary: 'Get user quizzes ratio with history',
+    summary: 'Get user quiz ratio with history',
   })
   @Get('with-history/quiz/:quizId')
   @UseGuards(AuthGuard)
@@ -85,6 +85,20 @@ export class QuizResultController {
     return this.quizResultService.getUserQuizzesRatioWithHistory(
       userId,
       quizId,
+    );
+  }
+
+  @ApiOperation({
+    summary: 'Get company members quizzes ratio with history',
+  })
+  @Get('with-history/company/:companyId')
+  async getCompanyQuizzesRatioWithHistory(
+    @User('id') userId: number,
+    @Param('companyId') companyId: number,
+  ): Promise<IQuizzesResultsWithHistory> {
+    return this.quizResultService.getCompanyQuizzesRatioWithHistory(
+      userId,
+      companyId,
     );
   }
 

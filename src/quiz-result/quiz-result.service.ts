@@ -20,6 +20,8 @@ import {
   ICompanyQuizzesResults,
   ICreateQuizResult,
   IQuizResultDetail,
+  IQuizzesResultsAggregatedData,
+  IQuizzesResultsRawData,
   IQuizzesResultsWithHistory,
 } from './interfaces';
 import {
@@ -371,5 +373,76 @@ export class QuizResultService {
     }
 
     return { companyName: company.name, membersResults: company.members };
+  }
+
+  async getCompanyQuizzesRatioWithHistory(
+    userId: number,
+    companyId: number,
+  ): Promise<IQuizzesResultsWithHistory> {
+    const company = await this.companyRepository.findOne({
+      where: { id: companyId },
+      relations: ['owner', 'admins'],
+    });
+
+    if (!company) {
+      throw new HttpException(COMPANY_NOT_FOUND, HttpStatus.NOT_FOUND);
+    }
+
+    if (!isUserAdmin(userId, company)) {
+      throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
+    }
+
+    const quizzesResultsRawData: IQuizzesResultsRawData[] =
+      await this.quizResultRepository
+        .createQueryBuilder('quizResult')
+        .leftJoinAndSelect('quizResult.company', 'company')
+        .where('company.id = :companyId', { companyId })
+        .select([
+          "DATE_TRUNC('day', quizResult.finalTime AT TIME ZONE 'UTC') AT TIME ZONE 'Europe/Kiev' AS date",
+          'quizResult.user AS user_id',
+          'SUM(quizResult.correctAnswers) AS correct_answers',
+          'SUM(quizResult.totalQuestions) AS total_questions',
+        ])
+        .groupBy('date, user_id')
+        .orderBy('date')
+        .getRawMany();
+
+    const quizzesResultsAggregatedData = quizzesResultsRawData.reduce(
+      (acc, current) => {
+        const { date } = current;
+
+        if (!acc[date]) {
+          acc[date] = {
+            date,
+            totalCorrectAnswers: 0,
+            totalQuestions: 0,
+          };
+        }
+
+        acc[date].totalCorrectAnswers += +current.correct_answers;
+        acc[date].totalQuestions += +current.total_questions;
+
+        return acc;
+      },
+      {},
+    );
+
+    const usersAverageWithHistory =
+      Object.values<IQuizzesResultsAggregatedData>(
+        quizzesResultsAggregatedData,
+      ).map((entry) => ({
+        date: entry.date,
+        averageRatio: entry.totalCorrectAnswers / entry.totalQuestions,
+      }));
+
+    const labels: Array<string> = [];
+    const ratio: Array<number> = [];
+
+    usersAverageWithHistory.forEach((result) => {
+      labels.push(dayjs(result.date).format('DD-MM-YY'));
+      ratio.push(+(result.averageRatio * 100).toFixed(4));
+    });
+
+    return { labels, ratio };
   }
 }

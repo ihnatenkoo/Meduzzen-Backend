@@ -25,4 +25,17 @@ export interface ICompanyQuizzesResults {
   membersResults: UserEntity[];
 }
 
+export interface IQuizzesResultsRawData {
+  date: string;
+  user_id: number;
+  correct_answers: string;
+  total_questions: string;
+}
+
+export interface IQuizzesResultsAggregatedData {
+  date: string;
+  totalCorrectAnswers: number;
+  totalQuestions: number;
+}
+
 export type FileType = 'json' | 'csv';
