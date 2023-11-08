@@ -23,6 +23,7 @@ import { createFile } from 'src/utils/createFile';
 import { QuizResultService } from './quiz-result.service';
 import {
   FileType,
+  ICompanyQuizzesResults,
   ICreateQuizResult,
   IQuizzesResultsWithHistory,
 } from './interfaces';
@@ -49,10 +50,27 @@ export class QuizResultController {
   })
   @Get('all/:userId')
   @UseGuards(AuthGuard)
-  async getUserCompletedQuizzes(@Param('userId') userId: number): Promise<{
+  async getUserCompletedQuizzes(
+    @Param('userId', IdValidationPipe) userId: number,
+  ): Promise<{
     quizResults: QuizResultEntity[];
   }> {
     return this.quizResultService.getUserCompletedQuizzes(userId);
+  }
+
+  @ApiOperation({
+    summary: 'Get user completed quizzes with final time inside company ',
+  })
+  @Get('all/company/:companyId')
+  @UseGuards(AuthGuard)
+  async getUserCompletedQuizzesInCompany(
+    @User('id') userId: number,
+    @Param('companyId', IdValidationPipe) companyId: number,
+  ): Promise<ICompanyQuizzesResults> {
+    return this.quizResultService.getUserCompletedQuizzesInCompany(
+      userId,
+      companyId,
+    );
   }
 
   @ApiOperation({

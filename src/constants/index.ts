@@ -3,6 +3,7 @@ export const USER_NOT_FOUND = 'User not found';
 export const COMPANY_NOT_FOUND = 'Company not found';
 export const QUIZ_NOT_FOUND = 'Quiz not found';
 export const QUESTION_NOT_FOUND = 'Question not found';
+export const QUIZ_RESULTS_FOUND = 'Quiz results not found';
 export const ACCESS_DENIED = 'Access denied';
 export const UNAUTHORIZED = 'Unauthorized';
 export const BAD_CREDENTIALS = 'Wrong email or password';

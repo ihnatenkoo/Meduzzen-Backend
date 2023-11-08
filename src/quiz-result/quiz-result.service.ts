@@ -17,6 +17,7 @@ import { UserEntity } from 'src/user/user.entity';
 import { isUserAdmin } from 'src/utils/isUserAdmin';
 import { CompanyEntity } from 'src/company/company.entity';
 import {
+  ICompanyQuizzesResults,
   ICreateQuizResult,
   IQuizResultDetail,
   IQuizzesResultsWithHistory,
@@ -25,6 +26,7 @@ import {
   ACCESS_DENIED,
   COMPANY_NOT_FOUND,
   QUIZ_NOT_FOUND,
+  QUIZ_RESULTS_FOUND,
   TWO_DAYS_IN_SECONDS,
 } from 'src/constants';
 
@@ -301,6 +303,10 @@ export class QuizResultService {
       order: { finalTime: 'ASC' },
     });
 
+    if (!quizResults) {
+      throw new HttpException(QUIZ_RESULTS_FOUND, HttpStatus.NOT_FOUND);
+    }
+
     const labels: Array<string> = [];
     const ratio: Array<number> = [];
     const time: Array<string> = [];
@@ -329,6 +335,43 @@ export class QuizResultService {
       select: ['quiz', 'finalTime'],
     });
 
+    if (!quizResults) {
+      throw new HttpException(QUIZ_RESULTS_FOUND, HttpStatus.NOT_FOUND);
+    }
+
     return { quizResults };
+  }
+
+  async getUserCompletedQuizzesInCompany(
+    userId: number,
+    companyId: number,
+  ): Promise<ICompanyQuizzesResults> {
+    const company = await this.companyRepository
+      .createQueryBuilder('company')
+      .leftJoinAndSelect('company.owner', 'owner')
+      .leftJoinAndSelect('company.admins', 'admins')
+      .leftJoinAndSelect('company.members', 'members')
+      .leftJoinAndSelect('members.completedQuizzes', 'completedQuizzes')
+      .leftJoinAndSelect('completedQuizzes.quiz', 'quiz')
+      .select([
+        'company',
+        'owner',
+        'admins',
+        'members',
+        'quiz',
+        'completedQuizzes.finalTime',
+      ])
+      .where('company.id = :companyId', { companyId })
+      .getOne();
+
+    if (!company) {
+      throw new HttpException(COMPANY_NOT_FOUND, HttpStatus.NOT_FOUND);
+    }
+
+    if (!isUserAdmin(userId, company)) {
+      throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
+    }
+
+    return { companyName: company.name, membersResults: company.members };
   }
 }

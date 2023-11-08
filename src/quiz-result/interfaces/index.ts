@@ -1,3 +1,5 @@
+import { UserEntity } from 'src/user/user.entity';
+
 export interface ICreateQuizResult {
   result: {
     totalQuestions: number;
@@ -17,6 +19,11 @@ export interface IQuizzesResultsWithHistory {
   labels: string[];
   ratio: number[];
   time: string[];
+}
+
+export interface ICompanyQuizzesResults {
+  companyName: string;
+  membersResults: UserEntity[];
 }
 
 export type FileType = 'json' | 'csv';
