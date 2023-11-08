@@ -26,16 +26,21 @@ export interface ICompanyQuizzesResults {
 }
 
 export interface IQuizzesResultsRawData {
-  date: string;
+  date: Date;
   user_id: number;
   correct_answers: string;
   total_questions: string;
 }
 
 export interface IQuizzesResultsAggregatedData {
-  date: string;
+  date: Date;
   totalCorrectAnswers: number;
   totalQuestions: number;
+}
+
+export interface IUserResultsRawData {
+  date: Date;
+  average_ratio: string;
 }
 
 export type FileType = 'json' | 'csv';

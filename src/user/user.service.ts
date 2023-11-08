@@ -104,7 +104,7 @@ export class UserService {
       throw new HttpException('Rating not available', HttpStatus.BAD_REQUEST);
     }
 
-    const ratio = +(totalCorrectAnswers / totalQuestions).toFixed(3);
+    const ratio = +(totalCorrectAnswers / totalQuestions).toFixed(4);
 
     return { userId, ratio };
   }

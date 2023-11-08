@@ -14,8 +14,9 @@ import { CreateQuizResultDto } from './dto/createQuizResult.dto';
 import { QuizEntity } from 'src/quiz/quiz.entity';
 import { QuizResultEntity } from './quiz-result.entity';
 import { UserEntity } from 'src/user/user.entity';
-import { isUserAdmin } from 'src/utils/isUserAdmin';
 import { CompanyEntity } from 'src/company/company.entity';
+import { isUserAdmin } from 'src/utils/isUserAdmin';
+import { ratioToPercentage } from 'src/utils/ratioToPercentage';
 import {
   ICompanyQuizzesResults,
   ICreateQuizResult,
@@ -23,6 +24,7 @@ import {
   IQuizzesResultsAggregatedData,
   IQuizzesResultsRawData,
   IQuizzesResultsWithHistory,
+  IUserResultsRawData,
 } from './interfaces';
 import {
   ACCESS_DENIED,
@@ -315,7 +317,7 @@ export class QuizResultService {
 
     quizResults.forEach((result) => {
       labels.push(dayjs(result.finalTime).format('DD-MM-YYYY'));
-      ratio.push(result.ratio * 100);
+      ratio.push(ratioToPercentage(result.ratio));
     });
 
     const ratioWithHistory = {
@@ -410,17 +412,18 @@ export class QuizResultService {
     const quizzesResultsAggregatedData = quizzesResultsRawData.reduce(
       (acc, current) => {
         const { date } = current;
+        const index = date.toString();
 
-        if (!acc[date]) {
-          acc[date] = {
+        if (!acc[index]) {
+          acc[index] = {
             date,
             totalCorrectAnswers: 0,
             totalQuestions: 0,
           };
         }
 
-        acc[date].totalCorrectAnswers += +current.correct_answers;
-        acc[date].totalQuestions += +current.total_questions;
+        acc[index].totalCorrectAnswers += +current.correct_answers;
+        acc[index].totalQuestions += +current.total_questions;
 
         return acc;
       },
@@ -440,7 +443,55 @@ export class QuizResultService {
 
     usersAverageWithHistory.forEach((result) => {
       labels.push(dayjs(result.date).format('DD-MM-YY'));
-      ratio.push(+(result.averageRatio * 100).toFixed(4));
+      ratio.push(ratioToPercentage(result.averageRatio));
+    });
+
+    return { labels, ratio };
+  }
+
+  async getUserInCompanyWithHistory(
+    userId: number,
+    companyId: number,
+    candidateId: number,
+  ): Promise<IQuizzesResultsWithHistory> {
+    const company = await this.companyRepository.findOne({
+      where: { id: companyId },
+      relations: ['owner', 'admins', 'members'],
+    });
+
+    if (!company) {
+      throw new HttpException(COMPANY_NOT_FOUND, HttpStatus.NOT_FOUND);
+    }
+
+    if (!isUserAdmin(userId, company)) {
+      throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
+    }
+
+    if (!company.members.some((member) => member.id === candidateId)) {
+      throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
+    }
+
+    const userResultsRawData: IUserResultsRawData[] =
+      await this.quizResultRepository
+        .createQueryBuilder('quizResult')
+        .leftJoinAndSelect('quizResult.company', 'company')
+        .leftJoinAndSelect('quizResult.user', 'user')
+        .where('company.id = :companyId', { companyId })
+        .andWhere('user.id = :candidateId', { candidateId })
+        .select([
+          "DATE_TRUNC('day', quizResult.finalTime AT TIME ZONE 'UTC') AT TIME ZONE 'Europe/Kiev' AS date",
+          'SUM(CAST(quizResult.correctAnswers AS DECIMAL)) / SUM(quizResult.totalQuestions) AS average_ratio',
+        ])
+        .groupBy('date')
+        .orderBy('date')
+        .getRawMany();
+
+    const labels: Array<string> = [];
+    const ratio: Array<number> = [];
+
+    userResultsRawData.forEach((result) => {
+      labels.push(dayjs(result.date).format('DD-MM-YY'));
+      ratio.push(ratioToPercentage(result.average_ratio));
     });
 
     return { labels, ratio };

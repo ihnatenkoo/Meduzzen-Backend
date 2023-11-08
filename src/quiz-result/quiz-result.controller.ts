@@ -80,11 +80,28 @@ export class QuizResultController {
   @UseGuards(AuthGuard)
   async getUserQuizzesRatioWithHistory(
     @User('id') userId: number,
-    @Param('quizId') quizId: number,
+    @Param('quizId', IdValidationPipe) quizId: number,
   ): Promise<IQuizzesResultsWithHistory> {
     return this.quizResultService.getUserQuizzesRatioWithHistory(
       userId,
       quizId,
+    );
+  }
+
+  @ApiOperation({
+    summary: 'Get user quiz ratio inside company with history',
+  })
+  @Get('with-history/company/:companyId/user/:candidateId')
+  @UseGuards(AuthGuard)
+  async getUserInCompanyWithHistory(
+    @User('id') userId: number,
+    @Param('companyId', IdValidationPipe) companyId: number,
+    @Param('candidateId', IdValidationPipe) candidateId: number,
+  ): Promise<IQuizzesResultsWithHistory> {
+    return this.quizResultService.getUserInCompanyWithHistory(
+      userId,
+      companyId,
+      candidateId,
     );
   }
 
@@ -94,7 +111,7 @@ export class QuizResultController {
   @Get('with-history/company/:companyId')
   async getCompanyQuizzesRatioWithHistory(
     @User('id') userId: number,
-    @Param('companyId') companyId: number,
+    @Param('companyId', IdValidationPipe) companyId: number,
   ): Promise<IQuizzesResultsWithHistory> {
     return this.quizResultService.getCompanyQuizzesRatioWithHistory(
       userId,
