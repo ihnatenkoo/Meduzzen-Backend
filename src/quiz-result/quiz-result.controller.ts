@@ -18,6 +18,7 @@ import { DtoValidationPipe } from 'src/pipes/dtoValidation.pipe';
 import { IdValidationPipe } from 'src/pipes/idValidationPipe';
 import { CreateQuizResultDto } from './dto/createQuizResult.dto';
 import { UserEntity } from 'src/user/user.entity';
+import { QuizResultEntity } from './quiz-result.entity';
 import { createFile } from 'src/utils/createFile';
 import { QuizResultService } from './quiz-result.service';
 import {
@@ -27,7 +28,7 @@ import {
 } from './interfaces';
 
 @ApiBearerAuth()
-@ApiTags('quiz')
+@ApiTags('quiz-result')
 @Controller('quiz-result')
 export class QuizResultController {
   constructor(private readonly quizResultService: QuizResultService) {}
@@ -44,9 +45,20 @@ export class QuizResultController {
   }
 
   @ApiOperation({
+    summary: 'Get user completed quizzes and final time',
+  })
+  @Get('all/:userId')
+  @UseGuards(AuthGuard)
+  async getUserCompletedQuizzes(@Param('userId') userId: number): Promise<{
+    quizResults: QuizResultEntity[];
+  }> {
+    return this.quizResultService.getUserCompletedQuizzes(userId);
+  }
+
+  @ApiOperation({
     summary: 'Get user quizzes ratio with history',
   })
-  @Get('all')
+  @Get('all-with-history')
   @UseGuards(AuthGuard)
   async getUserQuizzesRatioWithHistory(
     @User('id') userId: number,

@@ -319,4 +319,16 @@ export class QuizResultService {
 
     return ratioWithHistory;
   }
+
+  async getUserCompletedQuizzes(userId: number): Promise<{
+    quizResults: QuizResultEntity[];
+  }> {
+    const quizResults = await this.quizResultRepository.find({
+      where: { user: { id: userId } },
+      relations: ['quiz'],
+      select: ['quiz', 'finalTime'],
+    });
+
+    return { quizResults };
+  }
 }
