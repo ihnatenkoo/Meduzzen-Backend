@@ -18,7 +18,6 @@ export interface IQuizResultDetail {
 export interface IQuizzesResultsWithHistory {
   labels: string[];
   ratio: number[];
-  time: string[];
 }
 
 export interface ICompanyQuizzesResults {

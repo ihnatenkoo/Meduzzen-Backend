@@ -296,9 +296,10 @@ export class QuizResultService {
 
   async getUserQuizzesRatioWithHistory(
     userId: number,
+    quizId: number,
   ): Promise<IQuizzesResultsWithHistory> {
     const quizResults = await this.quizResultRepository.find({
-      where: { user: { id: userId } },
+      where: { quiz: { id: quizId }, user: { id: userId } },
       relations: ['user', 'quiz'],
       order: { finalTime: 'ASC' },
     });
@@ -309,18 +310,15 @@ export class QuizResultService {
 
     const labels: Array<string> = [];
     const ratio: Array<number> = [];
-    const time: Array<string> = [];
 
     quizResults.forEach((result) => {
-      labels.push(result.quiz.name);
+      labels.push(dayjs(result.finalTime).format('DD-MM-YYYY'));
       ratio.push(result.ratio * 100);
-      time.push(dayjs(result.finalTime).format('DD-MM-YYYY'));
     });
 
     const ratioWithHistory = {
       labels,
       ratio,
-      time,
     };
 
     return ratioWithHistory;
