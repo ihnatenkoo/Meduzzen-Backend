@@ -7,21 +7,26 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import * as dayjs from 'dayjs';
 import { Cache } from 'cache-manager';
 import { Repository } from 'typeorm';
 import { CreateQuizResultDto } from './dto/createQuizResult.dto';
 import { QuizEntity } from 'src/quiz/quiz.entity';
 import { QuizResultEntity } from './quiz-result.entity';
 import { UserEntity } from 'src/user/user.entity';
-import { ICreateQuizResult, IQuizResultDetail } from './interfaces';
 import { isUserAdmin } from 'src/utils/isUserAdmin';
+import { CompanyEntity } from 'src/company/company.entity';
+import {
+  ICreateQuizResult,
+  IQuizResultDetail,
+  IQuizzesResultsWithHistory,
+} from './interfaces';
 import {
   ACCESS_DENIED,
   COMPANY_NOT_FOUND,
   QUIZ_NOT_FOUND,
   TWO_DAYS_IN_SECONDS,
 } from 'src/constants';
-import { CompanyEntity } from 'src/company/company.entity';
 
 @Injectable()
 export class QuizResultService {
@@ -285,5 +290,33 @@ export class QuizResultService {
     this.logger.log(`Get quiz result from DB for quiz id:${quizId}`);
 
     return { quiz };
+  }
+
+  async getUserQuizzesRatioWithHistory(
+    userId: number,
+  ): Promise<IQuizzesResultsWithHistory> {
+    const quizResults = await this.quizResultRepository.find({
+      where: { user: { id: userId } },
+      relations: ['user', 'quiz'],
+      order: { finalTime: 'ASC' },
+    });
+
+    const labels: Array<string> = [];
+    const ratio: Array<number> = [];
+    const time: Array<string> = [];
+
+    quizResults.forEach((result) => {
+      labels.push(result.quiz.name);
+      ratio.push(result.ratio * 100);
+      time.push(dayjs(result.finalTime).format('DD-MM-YYYY'));
+    });
+
+    const ratioWithHistory = {
+      labels,
+      ratio,
+      time,
+    };
+
+    return ratioWithHistory;
   }
 }

@@ -40,19 +40,19 @@ export class UserController {
   @ApiOperation({
     summary: 'Get user rating in the app',
   })
-  @Get('/ratio')
+  @Get(':userId/ratio')
   @UseGuards(AuthGuard)
-  async getUserRatioInApp(@User('id') userId: number) {
+  async getUserRatioInApp(@Param('userId', IdValidationPipe) userId: number) {
     return this.userService.getUserRatio(userId);
   }
 
   @ApiOperation({
     summary: 'Get user rating in the company',
   })
-  @Get('/ratio/:companyId')
+  @Get(':userId/ratio/company/:companyId')
   @UseGuards(AuthGuard)
   async getUserRatioInCompany(
-    @User('id') userId: number,
+    @Param('userId', IdValidationPipe) userId: number,
     @Param('companyId', IdValidationPipe) companyId: number,
   ) {
     return this.userService.getUserRatio(userId, companyId);

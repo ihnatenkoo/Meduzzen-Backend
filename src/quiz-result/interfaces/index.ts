@@ -13,4 +13,10 @@ export interface IQuizResultDetail {
   isCorrect: boolean;
 }
 
+export interface IQuizzesResultsWithHistory {
+  labels: string[];
+  ratio: number[];
+  time: string[];
+}
+
 export type FileType = 'json' | 'csv';

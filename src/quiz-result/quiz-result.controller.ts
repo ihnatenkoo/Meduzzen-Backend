@@ -18,9 +18,13 @@ import { DtoValidationPipe } from 'src/pipes/dtoValidation.pipe';
 import { IdValidationPipe } from 'src/pipes/idValidationPipe';
 import { CreateQuizResultDto } from './dto/createQuizResult.dto';
 import { UserEntity } from 'src/user/user.entity';
-import { FileType, ICreateQuizResult } from './interfaces';
-import { QuizResultService } from './quiz-result.service';
 import { createFile } from 'src/utils/createFile';
+import { QuizResultService } from './quiz-result.service';
+import {
+  FileType,
+  ICreateQuizResult,
+  IQuizzesResultsWithHistory,
+} from './interfaces';
 
 @ApiBearerAuth()
 @ApiTags('quiz')
@@ -37,6 +41,17 @@ export class QuizResultController {
     @Body() crateQuizResultDto: CreateQuizResultDto,
   ): Promise<ICreateQuizResult> {
     return this.quizResultService.createQuizResult(user, crateQuizResultDto);
+  }
+
+  @ApiOperation({
+    summary: 'Get user quizzes ratio with history',
+  })
+  @Get('all')
+  @UseGuards(AuthGuard)
+  async getUserQuizzesRatioWithHistory(
+    @User('id') userId: number,
+  ): Promise<IQuizzesResultsWithHistory> {
+    return this.quizResultService.getUserQuizzesRatioWithHistory(userId);
   }
 
   @ApiOperation({
