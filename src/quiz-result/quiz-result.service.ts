@@ -20,11 +20,9 @@ import { ratioToPercentage } from 'src/utils/ratioToPercentage';
 import {
   ICompanyQuizzesResults,
   ICreateQuizResult,
+  IHistoryResultsRaw,
   IQuizResultDetail,
-  IQuizzesResultsAggregatedData,
-  IQuizzesResultsRawData,
   IQuizzesResultsWithHistory,
-  IUserResultsRawData,
 } from './interfaces';
 import {
   ACCESS_DENIED,
@@ -143,7 +141,7 @@ export class QuizResultService {
     return { result: { totalQuestions, correctAnswers, ratio } };
   }
 
-  async getUserQuizResult(
+  async downloadUserQuizResult(
     userId: number,
     quizId: number,
     candidateId: number,
@@ -204,7 +202,7 @@ export class QuizResultService {
     return quizResult;
   }
 
-  async getCompanyQuizzesResults(
+  async downloadCompanyQuizzesResults(
     userId: number,
     companyId: number,
   ): Promise<{
@@ -252,7 +250,7 @@ export class QuizResultService {
     return { company };
   }
 
-  async getQuizResults(
+  async downloadQuizResult(
     userId: number,
     quizId: number,
   ): Promise<{ quiz: QuizEntity }> {
@@ -328,54 +326,6 @@ export class QuizResultService {
     return ratioWithHistory;
   }
 
-  async getUserInCompanyQuizRatioHistory(
-    userId: number,
-    companyId: number,
-    candidateId: number,
-  ): Promise<IQuizzesResultsWithHistory> {
-    const company = await this.companyRepository.findOne({
-      where: { id: companyId },
-      relations: ['owner', 'admins', 'members'],
-    });
-
-    if (!company) {
-      throw new HttpException(COMPANY_NOT_FOUND, HttpStatus.NOT_FOUND);
-    }
-
-    if (!isUserAdmin(userId, company)) {
-      throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
-    }
-
-    if (!company.members.some((member) => member.id === candidateId)) {
-      throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
-    }
-
-    const userResultsRawData: IUserResultsRawData[] =
-      await this.quizResultRepository
-        .createQueryBuilder('quizResult')
-        .leftJoinAndSelect('quizResult.company', 'company')
-        .leftJoinAndSelect('quizResult.user', 'user')
-        .where('company.id = :companyId', { companyId })
-        .andWhere('user.id = :candidateId', { candidateId })
-        .select([
-          "DATE_TRUNC('day', quizResult.finalTime AT TIME ZONE 'UTC') AT TIME ZONE 'Europe/Kiev' AS date",
-          'SUM(CAST(quizResult.correctAnswers AS DECIMAL)) / SUM(quizResult.totalQuestions) AS average_ratio',
-        ])
-        .groupBy('date')
-        .orderBy('date')
-        .getRawMany();
-
-    const labels: Array<string> = [];
-    const ratio: Array<number> = [];
-
-    userResultsRawData.forEach((result) => {
-      labels.push(dayjs(result.date).format('DD-MM-YY'));
-      ratio.push(ratioToPercentage(result.average_ratio));
-    });
-
-    return { labels, ratio };
-  }
-
   async getUserQuizzesFinalTime(userId: number): Promise<{
     quizResults: QuizResultEntity[];
   }> {
@@ -425,13 +375,14 @@ export class QuizResultService {
     return { companyName: company.name, membersResults: company.members };
   }
 
-  async getCompanyMembersRatioHistory(
+  async getCompanyRatioHistory(
     userId: number,
     companyId: number,
+    candidateId?: number,
   ): Promise<IQuizzesResultsWithHistory> {
     const company = await this.companyRepository.findOne({
       where: { id: companyId },
-      relations: ['owner', 'admins'],
+      relations: ['owner', 'admins', 'members'],
     });
 
     if (!company) {
@@ -442,56 +393,40 @@ export class QuizResultService {
       throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
     }
 
-    const quizzesResultsRawData: IQuizzesResultsRawData[] =
-      await this.quizResultRepository
-        .createQueryBuilder('quizResult')
-        .leftJoinAndSelect('quizResult.company', 'company')
-        .where('company.id = :companyId', { companyId })
-        .select([
-          "DATE_TRUNC('day', quizResult.finalTime AT TIME ZONE 'UTC') AT TIME ZONE 'Europe/Kiev' AS date",
-          'quizResult.user AS user_id',
-          'SUM(quizResult.correctAnswers) AS correct_answers',
-          'SUM(quizResult.totalQuestions) AS total_questions',
-        ])
-        .groupBy('date, user_id')
-        .orderBy('date')
-        .getRawMany();
+    if (
+      candidateId &&
+      !company.members.some((member) => member.id === candidateId)
+    ) {
+      throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
+    }
 
-    const quizzesResultsAggregatedData = quizzesResultsRawData.reduce(
-      (acc, current) => {
-        const { date } = current;
-        const index = date.toString();
+    const queryBuilder = this.quizResultRepository
+      .createQueryBuilder('quizResult')
+      .leftJoinAndSelect('quizResult.company', 'company')
+      .where('company.id = :companyId', { companyId })
+      .andWhere('user.id = :candidateId', { candidateId });
 
-        if (!acc[index]) {
-          acc[index] = {
-            date,
-            totalCorrectAnswers: 0,
-            totalQuestions: 0,
-          };
-        }
+    if (candidateId) {
+      queryBuilder
+        .leftJoinAndSelect('quizResult.user', 'user')
+        .andWhere('user.id = :candidateId', { candidateId });
+    }
 
-        acc[index].totalCorrectAnswers += +current.correct_answers;
-        acc[index].totalQuestions += +current.total_questions;
-
-        return acc;
-      },
-      {},
-    );
-
-    const usersAverageWithHistory =
-      Object.values<IQuizzesResultsAggregatedData>(
-        quizzesResultsAggregatedData,
-      ).map((entry) => ({
-        date: entry.date,
-        averageRatio: entry.totalCorrectAnswers / entry.totalQuestions,
-      }));
+    const results: IHistoryResultsRaw[] = await queryBuilder
+      .select([
+        "DATE_TRUNC('day', quizResult.finalTime AT TIME ZONE 'UTC') AT TIME ZONE 'Europe/Kiev' AS date",
+        'SUM(CAST(quizResult.correctAnswers AS DECIMAL)) / SUM(quizResult.totalQuestions) AS average_ratio',
+      ])
+      .groupBy('date')
+      .orderBy('date')
+      .getRawMany();
 
     const labels: Array<string> = [];
     const ratio: Array<number> = [];
 
-    usersAverageWithHistory.forEach((result) => {
+    results.forEach((result) => {
       labels.push(dayjs(result.date).format('DD-MM-YY'));
-      ratio.push(ratioToPercentage(result.averageRatio));
+      ratio.push(ratioToPercentage(result.average_ratio));
     });
 
     return { labels, ratio };

@@ -86,33 +86,30 @@ export class QuizResultController {
   }
 
   @ApiOperation({
-    summary: 'Get user quiz ratio inside company with history',
+    summary: 'Get company all members quizzes ratio with history',
+  })
+  @Get('history/company/:companyId')
+  async getMembersCompanyRatioHistory(
+    @User('id') userId: number,
+    @Param('companyId', IdValidationPipe) companyId: number,
+  ): Promise<IQuizzesResultsWithHistory> {
+    return this.quizResultService.getCompanyRatioHistory(userId, companyId);
+  }
+
+  @ApiOperation({
+    summary: 'Get company certain member quizzes ratio with history',
   })
   @Get('history/company/:companyId/user/:candidateId')
   @UseGuards(AuthGuard)
-  async getUserInCompanyQuizRatioHistory(
+  async getUserCompanyRatioHistory(
     @User('id') userId: number,
     @Param('companyId', IdValidationPipe) companyId: number,
     @Param('candidateId', IdValidationPipe) candidateId: number,
   ): Promise<IQuizzesResultsWithHistory> {
-    return this.quizResultService.getUserInCompanyQuizRatioHistory(
+    return this.quizResultService.getCompanyRatioHistory(
       userId,
       companyId,
       candidateId,
-    );
-  }
-
-  @ApiOperation({
-    summary: 'Get company members quizzes ratio with history',
-  })
-  @Get('history/company/:companyId')
-  async getCompanyMembersRatioHistory(
-    @User('id') userId: number,
-    @Param('companyId', IdValidationPipe) companyId: number,
-  ): Promise<IQuizzesResultsWithHistory> {
-    return this.quizResultService.getCompanyMembersRatioHistory(
-      userId,
-      companyId,
     );
   }
 
@@ -128,7 +125,7 @@ export class QuizResultController {
     @Query('type') type: FileType,
     @Res() response: Response,
   ): Promise<void> {
-    const data = await this.quizResultService.getUserQuizResult(
+    const data = await this.quizResultService.downloadUserQuizResult(
       userId,
       quizId,
       candidateId,
@@ -160,7 +157,7 @@ export class QuizResultController {
     type: FileType,
     @Res() response: Response,
   ): Promise<void> {
-    const data = await this.quizResultService.getCompanyQuizzesResults(
+    const data = await this.quizResultService.downloadCompanyQuizzesResults(
       userId,
       companyId,
     );
@@ -191,7 +188,10 @@ export class QuizResultController {
     type: FileType,
     @Res() response: Response,
   ): Promise<void> {
-    const data = await this.quizResultService.getQuizResults(userId, quizId);
+    const data = await this.quizResultService.downloadQuizResult(
+      userId,
+      quizId,
+    );
 
     const { filePath, fileName } = await createFile(data, type);
 

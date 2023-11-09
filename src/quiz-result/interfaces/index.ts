@@ -24,21 +24,7 @@ export interface ICompanyQuizzesResults {
   companyName: string;
   membersResults: UserEntity[];
 }
-
-export interface IQuizzesResultsRawData {
-  date: Date;
-  user_id: number;
-  correct_answers: string;
-  total_questions: string;
-}
-
-export interface IQuizzesResultsAggregatedData {
-  date: Date;
-  totalCorrectAnswers: number;
-  totalQuestions: number;
-}
-
-export interface IUserResultsRawData {
+export interface IHistoryResultsRaw {
   date: Date;
   average_ratio: string;
 }
