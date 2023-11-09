@@ -7,21 +7,31 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import * as dayjs from 'dayjs';
 import { Cache } from 'cache-manager';
 import { Repository } from 'typeorm';
 import { CreateQuizResultDto } from './dto/createQuizResult.dto';
 import { QuizEntity } from 'src/quiz/quiz.entity';
 import { QuizResultEntity } from './quiz-result.entity';
 import { UserEntity } from 'src/user/user.entity';
-import { ICreateQuizResult, IQuizResultDetail } from './interfaces';
+import { CompanyEntity } from 'src/company/company.entity';
 import { isUserAdmin } from 'src/utils/isUserAdmin';
+import { ratioToPercentage } from 'src/utils/ratioToPercentage';
+import {
+  ICompanyQuizzesResultsWithTime,
+  ICompletedQuizzesWithTime,
+  ICreateQuizResult,
+  IHistoryResultsRaw,
+  IQuizResultDetail,
+  IQuizzesResultsWithHistory,
+} from './interfaces';
 import {
   ACCESS_DENIED,
   COMPANY_NOT_FOUND,
   QUIZ_NOT_FOUND,
+  QUIZ_RESULTS_NOT_FOUND,
   TWO_DAYS_IN_SECONDS,
 } from 'src/constants';
-import { CompanyEntity } from 'src/company/company.entity';
 
 @Injectable()
 export class QuizResultService {
@@ -132,7 +142,7 @@ export class QuizResultService {
     return { result: { totalQuestions, correctAnswers, ratio } };
   }
 
-  async getUserQuizResult(
+  async downloadUserQuizResult(
     userId: number,
     quizId: number,
     candidateId: number,
@@ -193,7 +203,7 @@ export class QuizResultService {
     return quizResult;
   }
 
-  async getCompanyQuizzesResults(
+  async downloadCompanyQuizzesResults(
     userId: number,
     companyId: number,
   ): Promise<{
@@ -241,7 +251,7 @@ export class QuizResultService {
     return { company };
   }
 
-  async getQuizResults(
+  async downloadQuizResult(
     userId: number,
     quizId: number,
   ): Promise<{ quiz: QuizEntity }> {
@@ -285,5 +295,143 @@ export class QuizResultService {
     this.logger.log(`Get quiz result from DB for quiz id:${quizId}`);
 
     return { quiz };
+  }
+
+  async getUserQuizRatioHistory(
+    userId: number,
+    quizId: number,
+  ): Promise<IQuizzesResultsWithHistory> {
+    const quizResults = await this.quizResultRepository.find({
+      where: { quiz: { id: quizId }, user: { id: userId } },
+      relations: ['user', 'quiz'],
+      order: { finalTime: 'ASC' },
+    });
+
+    if (!quizResults) {
+      throw new HttpException(QUIZ_RESULTS_NOT_FOUND, HttpStatus.NOT_FOUND);
+    }
+
+    const labels: Array<string> = [];
+    const ratio: Array<number> = [];
+
+    quizResults.forEach((result) => {
+      labels.push(dayjs(result.finalTime).format('DD-MM-YYYY'));
+      ratio.push(ratioToPercentage(result.ratio));
+    });
+
+    const ratioWithHistory = {
+      labels,
+      ratio,
+    };
+
+    return ratioWithHistory;
+  }
+
+  async getUserQuizzesFinalTime(userId: number): Promise<{
+    quizResults: QuizResultEntity[];
+  }> {
+    const quizResults = await this.quizResultRepository.find({
+      where: { user: { id: userId } },
+      relations: ['quiz'],
+      select: ['quiz', 'finalTime'],
+    });
+
+    if (!quizResults) {
+      throw new HttpException(QUIZ_RESULTS_NOT_FOUND, HttpStatus.NOT_FOUND);
+    }
+
+    return { quizResults };
+  }
+
+  async getMembersQuizzesFinalTime(
+    userId: number,
+    companyId: number,
+  ): Promise<ICompanyQuizzesResultsWithTime> {
+    const company = await this.companyRepository.findOne({
+      where: { id: companyId },
+      relations: [
+        'owner',
+        'admins',
+        'members',
+        'completedQuizzes.quiz',
+        'completedQuizzes.user',
+      ],
+    });
+
+    if (!company) {
+      throw new HttpException(COMPANY_NOT_FOUND, HttpStatus.NOT_FOUND);
+    }
+
+    if (!isUserAdmin(userId, company)) {
+      throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
+    }
+
+    const completedQuizzesWithTime: ICompletedQuizzesWithTime[] =
+      company.completedQuizzes.map((quizResult) => {
+        return {
+          finalTime: quizResult.finalTime,
+          quiz: quizResult.quiz,
+          user: quizResult.user,
+        };
+      });
+
+    return { companyName: company.name, completedQuizzesWithTime };
+  }
+
+  async getCompanyRatioHistory(
+    userId: number,
+    companyId: number,
+    candidateId?: number,
+  ): Promise<IQuizzesResultsWithHistory> {
+    const company = await this.companyRepository.findOne({
+      where: { id: companyId },
+      relations: ['owner', 'admins', 'members'],
+    });
+
+    if (!company) {
+      throw new HttpException(COMPANY_NOT_FOUND, HttpStatus.NOT_FOUND);
+    }
+
+    if (!isUserAdmin(userId, company)) {
+      throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
+    }
+
+    if (
+      candidateId &&
+      !company.members.some((member) => member.id === candidateId)
+    ) {
+      throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
+    }
+
+    const queryBuilder = this.quizResultRepository
+      .createQueryBuilder('quizResult')
+      .leftJoinAndSelect('quizResult.company', 'company')
+      .where('company.id = :companyId', { companyId })
+      .andWhere('user.id = :candidateId', { candidateId });
+
+    if (candidateId) {
+      queryBuilder
+        .leftJoinAndSelect('quizResult.user', 'user')
+        .andWhere('user.id = :candidateId', { candidateId });
+    }
+
+    const results: IHistoryResultsRaw[] = await queryBuilder
+      .select([
+        "DATE_TRUNC('day', quizResult.finalTime AT TIME ZONE 'UTC') AT TIME ZONE 'Europe/Kiev' AS date",
+        'SUM(CAST(quizResult.correctAnswers AS DECIMAL)) / SUM(quizResult.totalQuestions) AS average_ratio',
+      ])
+      .groupBy('date')
+      .orderBy('date')
+      .getRawMany();
+
+    const labels: Array<string> = [];
+    const ratio: Array<number> = [];
+
+    results.forEach((result) => {
+      labels.push(dayjs(result.date).format('DD-MM-YY'));
+      ratio.push(ratioToPercentage(result.average_ratio));
+    });
+
+    return { labels, ratio };
   }
 }

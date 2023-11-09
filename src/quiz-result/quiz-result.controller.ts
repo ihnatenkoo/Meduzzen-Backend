@@ -18,12 +18,18 @@ import { DtoValidationPipe } from 'src/pipes/dtoValidation.pipe';
 import { IdValidationPipe } from 'src/pipes/idValidationPipe';
 import { CreateQuizResultDto } from './dto/createQuizResult.dto';
 import { UserEntity } from 'src/user/user.entity';
-import { FileType, ICreateQuizResult } from './interfaces';
-import { QuizResultService } from './quiz-result.service';
+import { QuizResultEntity } from './quiz-result.entity';
 import { createFile } from 'src/utils/createFile';
+import { QuizResultService } from './quiz-result.service';
+import {
+  FileType,
+  ICompanyQuizzesResultsWithTime,
+  ICreateQuizResult,
+  IQuizzesResultsWithHistory,
+} from './interfaces';
 
 @ApiBearerAuth()
-@ApiTags('quiz')
+@ApiTags('quiz-result')
 @Controller('quiz-result')
 export class QuizResultController {
   constructor(private readonly quizResultService: QuizResultService) {}
@@ -40,6 +46,71 @@ export class QuizResultController {
   }
 
   @ApiOperation({
+    summary: 'Get user completed quizzes with final time',
+  })
+  @Get('final-time/user/:userId')
+  @UseGuards(AuthGuard)
+  async getUserQuizzesFinalTime(
+    @Param('userId', IdValidationPipe) userId: number,
+  ): Promise<{
+    quizResults: QuizResultEntity[];
+  }> {
+    return this.quizResultService.getUserQuizzesFinalTime(userId);
+  }
+
+  @ApiOperation({
+    summary: 'Get user completed quizzes with final time inside company ',
+  })
+  @Get('final-time/company/:companyId')
+  @UseGuards(AuthGuard)
+  async getUserInCompanyQuizzesFinalTime(
+    @User('id') userId: number,
+    @Param('companyId', IdValidationPipe) companyId: number,
+  ): Promise<ICompanyQuizzesResultsWithTime> {
+    return this.quizResultService.getMembersQuizzesFinalTime(userId, companyId);
+  }
+
+  @ApiOperation({
+    summary: 'Get user quiz ratio with history',
+  })
+  @Get('history/quiz/:quizId')
+  @UseGuards(AuthGuard)
+  async getUserQuizRatioHistory(
+    @User('id') userId: number,
+    @Param('quizId', IdValidationPipe) quizId: number,
+  ): Promise<IQuizzesResultsWithHistory> {
+    return this.quizResultService.getUserQuizRatioHistory(userId, quizId);
+  }
+
+  @ApiOperation({
+    summary: 'Get company all members quizzes ratio with history',
+  })
+  @Get('history/company/:companyId')
+  async getMembersCompanyRatioHistory(
+    @User('id') userId: number,
+    @Param('companyId', IdValidationPipe) companyId: number,
+  ): Promise<IQuizzesResultsWithHistory> {
+    return this.quizResultService.getCompanyRatioHistory(userId, companyId);
+  }
+
+  @ApiOperation({
+    summary: 'Get company certain member quizzes ratio with history',
+  })
+  @Get('history/company/:companyId/user/:candidateId')
+  @UseGuards(AuthGuard)
+  async getUserCompanyRatioHistory(
+    @User('id') userId: number,
+    @Param('companyId', IdValidationPipe) companyId: number,
+    @Param('candidateId', IdValidationPipe) candidateId: number,
+  ): Promise<IQuizzesResultsWithHistory> {
+    return this.quizResultService.getCompanyRatioHistory(
+      userId,
+      companyId,
+      candidateId,
+    );
+  }
+
+  @ApiOperation({
     summary: 'Download quiz result by user in formats: json,csv',
   })
   @Get('download')
@@ -51,7 +122,7 @@ export class QuizResultController {
     @Query('type') type: FileType,
     @Res() response: Response,
   ): Promise<void> {
-    const data = await this.quizResultService.getUserQuizResult(
+    const data = await this.quizResultService.downloadUserQuizResult(
       userId,
       quizId,
       candidateId,
@@ -83,7 +154,7 @@ export class QuizResultController {
     type: FileType,
     @Res() response: Response,
   ): Promise<void> {
-    const data = await this.quizResultService.getCompanyQuizzesResults(
+    const data = await this.quizResultService.downloadCompanyQuizzesResults(
       userId,
       companyId,
     );
@@ -114,7 +185,10 @@ export class QuizResultController {
     type: FileType,
     @Res() response: Response,
   ): Promise<void> {
-    const data = await this.quizResultService.getQuizResults(userId, quizId);
+    const data = await this.quizResultService.downloadQuizResult(
+      userId,
+      quizId,
+    );
 
     const { filePath, fileName } = await createFile(data, type);
 
