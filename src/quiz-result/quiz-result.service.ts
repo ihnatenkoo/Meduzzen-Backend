@@ -29,7 +29,7 @@ import {
   ACCESS_DENIED,
   COMPANY_NOT_FOUND,
   QUIZ_NOT_FOUND,
-  QUIZ_RESULTS_FOUND,
+  QUIZ_RESULTS_NOT_FOUND,
   TWO_DAYS_IN_SECONDS,
 } from 'src/constants';
 
@@ -308,7 +308,7 @@ export class QuizResultService {
     });
 
     if (!quizResults) {
-      throw new HttpException(QUIZ_RESULTS_FOUND, HttpStatus.NOT_FOUND);
+      throw new HttpException(QUIZ_RESULTS_NOT_FOUND, HttpStatus.NOT_FOUND);
     }
 
     const labels: Array<string> = [];
@@ -337,7 +337,7 @@ export class QuizResultService {
     });
 
     if (!quizResults) {
-      throw new HttpException(QUIZ_RESULTS_FOUND, HttpStatus.NOT_FOUND);
+      throw new HttpException(QUIZ_RESULTS_NOT_FOUND, HttpStatus.NOT_FOUND);
     }
 
     return { quizResults };
