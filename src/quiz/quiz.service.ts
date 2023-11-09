@@ -94,15 +94,15 @@ export class QuizService {
       );
     }
 
-    const notificationText = `The new quiz ${quizName} is available in the company ${company.name}`;
+    const text = `The new quiz ${quizName} is available in the company ${company.name}`;
 
     await Promise.all(
       company.members.map(async (user) => {
         await this.notificationService.createNotification({
+          text,
           user,
-          text: notificationText,
-          type: ENotificationType.COMPANY,
           company,
+          type: ENotificationType.COMPANY,
         });
       }),
     );
