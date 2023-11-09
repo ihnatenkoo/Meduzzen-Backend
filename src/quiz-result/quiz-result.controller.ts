@@ -23,7 +23,7 @@ import { createFile } from 'src/utils/createFile';
 import { QuizResultService } from './quiz-result.service';
 import {
   FileType,
-  ICompanyQuizzesResults,
+  ICompanyQuizzesResultsWithTime,
   ICreateQuizResult,
   IQuizzesResultsWithHistory,
 } from './interfaces';
@@ -48,7 +48,7 @@ export class QuizResultController {
   @ApiOperation({
     summary: 'Get user completed quizzes with final time',
   })
-  @Get('final-time/:userId')
+  @Get('final-time/user/:userId')
   @UseGuards(AuthGuard)
   async getUserQuizzesFinalTime(
     @Param('userId', IdValidationPipe) userId: number,
@@ -66,11 +66,8 @@ export class QuizResultController {
   async getUserInCompanyQuizzesFinalTime(
     @User('id') userId: number,
     @Param('companyId', IdValidationPipe) companyId: number,
-  ): Promise<ICompanyQuizzesResults> {
-    return this.quizResultService.getUserInCompanyQuizzesFinalTime(
-      userId,
-      companyId,
-    );
+  ): Promise<ICompanyQuizzesResultsWithTime> {
+    return this.quizResultService.getMembersQuizzesFinalTime(userId, companyId);
   }
 
   @ApiOperation({

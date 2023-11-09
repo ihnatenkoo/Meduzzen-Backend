@@ -18,7 +18,8 @@ import { CompanyEntity } from 'src/company/company.entity';
 import { isUserAdmin } from 'src/utils/isUserAdmin';
 import { ratioToPercentage } from 'src/utils/ratioToPercentage';
 import {
-  ICompanyQuizzesResults,
+  ICompanyQuizzesResultsWithTime,
+  ICompletedQuizzesWithTime,
   ICreateQuizResult,
   IHistoryResultsRaw,
   IQuizResultDetail,
@@ -342,27 +343,20 @@ export class QuizResultService {
     return { quizResults };
   }
 
-  async getUserInCompanyQuizzesFinalTime(
+  async getMembersQuizzesFinalTime(
     userId: number,
     companyId: number,
-  ): Promise<ICompanyQuizzesResults> {
-    const company = await this.companyRepository
-      .createQueryBuilder('company')
-      .leftJoinAndSelect('company.owner', 'owner')
-      .leftJoinAndSelect('company.admins', 'admins')
-      .leftJoinAndSelect('company.members', 'members')
-      .leftJoinAndSelect('members.completedQuizzes', 'completedQuizzes')
-      .leftJoinAndSelect('completedQuizzes.quiz', 'quiz')
-      .select([
-        'company',
+  ): Promise<ICompanyQuizzesResultsWithTime> {
+    const company = await this.companyRepository.findOne({
+      where: { id: companyId },
+      relations: [
         'owner',
         'admins',
         'members',
-        'quiz',
-        'completedQuizzes.finalTime',
-      ])
-      .where('company.id = :companyId', { companyId })
-      .getOne();
+        'completedQuizzes.quiz',
+        'completedQuizzes.user',
+      ],
+    });
 
     if (!company) {
       throw new HttpException(COMPANY_NOT_FOUND, HttpStatus.NOT_FOUND);
@@ -372,7 +366,16 @@ export class QuizResultService {
       throw new HttpException(ACCESS_DENIED, HttpStatus.FORBIDDEN);
     }
 
-    return { companyName: company.name, membersResults: company.members };
+    const completedQuizzesWithTime: ICompletedQuizzesWithTime[] =
+      company.completedQuizzes.map((quizResult) => {
+        return {
+          finalTime: quizResult.finalTime,
+          quiz: quizResult.quiz,
+          user: quizResult.user,
+        };
+      });
+
+    return { companyName: company.name, completedQuizzesWithTime };
   }
 
   async getCompanyRatioHistory(

@@ -1,3 +1,4 @@
+import { QuizEntity } from 'src/quiz/quiz.entity';
 import { UserEntity } from 'src/user/user.entity';
 
 export interface ICreateQuizResult {
@@ -20,9 +21,15 @@ export interface IQuizzesResultsWithHistory {
   ratio: number[];
 }
 
-export interface ICompanyQuizzesResults {
+export interface ICompletedQuizzesWithTime {
+  finalTime: Date;
+  quiz: QuizEntity;
+  user: UserEntity;
+}
+
+export interface ICompanyQuizzesResultsWithTime {
   companyName: string;
-  membersResults: UserEntity[];
+  completedQuizzesWithTime: ICompletedQuizzesWithTime[];
 }
 export interface IHistoryResultsRaw {
   date: Date;
