@@ -46,28 +46,28 @@ export class QuizResultController {
   }
 
   @ApiOperation({
-    summary: 'Get user completed quizzes and final time',
+    summary: 'Get user completed quizzes with final time',
   })
-  @Get('all/:userId')
+  @Get('final-time/:userId')
   @UseGuards(AuthGuard)
-  async getUserCompletedQuizzes(
+  async getUserQuizzesFinalTime(
     @Param('userId', IdValidationPipe) userId: number,
   ): Promise<{
     quizResults: QuizResultEntity[];
   }> {
-    return this.quizResultService.getUserCompletedQuizzes(userId);
+    return this.quizResultService.getUserQuizzesFinalTime(userId);
   }
 
   @ApiOperation({
     summary: 'Get user completed quizzes with final time inside company ',
   })
-  @Get('all/company/:companyId')
+  @Get('final-time/company/:companyId')
   @UseGuards(AuthGuard)
-  async getUserCompletedQuizzesInCompany(
+  async getUserInCompanyQuizzesFinalTime(
     @User('id') userId: number,
     @Param('companyId', IdValidationPipe) companyId: number,
   ): Promise<ICompanyQuizzesResults> {
-    return this.quizResultService.getUserCompletedQuizzesInCompany(
+    return this.quizResultService.getUserInCompanyQuizzesFinalTime(
       userId,
       companyId,
     );
@@ -76,29 +76,26 @@ export class QuizResultController {
   @ApiOperation({
     summary: 'Get user quiz ratio with history',
   })
-  @Get('with-history/quiz/:quizId')
+  @Get('history/quiz/:quizId')
   @UseGuards(AuthGuard)
-  async getUserQuizzesRatioWithHistory(
+  async getUserQuizRatioHistory(
     @User('id') userId: number,
     @Param('quizId', IdValidationPipe) quizId: number,
   ): Promise<IQuizzesResultsWithHistory> {
-    return this.quizResultService.getUserQuizzesRatioWithHistory(
-      userId,
-      quizId,
-    );
+    return this.quizResultService.getUserQuizRatioHistory(userId, quizId);
   }
 
   @ApiOperation({
     summary: 'Get user quiz ratio inside company with history',
   })
-  @Get('with-history/company/:companyId/user/:candidateId')
+  @Get('history/company/:companyId/user/:candidateId')
   @UseGuards(AuthGuard)
-  async getUserInCompanyWithHistory(
+  async getUserInCompanyQuizRatioHistory(
     @User('id') userId: number,
     @Param('companyId', IdValidationPipe) companyId: number,
     @Param('candidateId', IdValidationPipe) candidateId: number,
   ): Promise<IQuizzesResultsWithHistory> {
-    return this.quizResultService.getUserInCompanyWithHistory(
+    return this.quizResultService.getUserInCompanyQuizRatioHistory(
       userId,
       companyId,
       candidateId,
@@ -108,12 +105,12 @@ export class QuizResultController {
   @ApiOperation({
     summary: 'Get company members quizzes ratio with history',
   })
-  @Get('with-history/company/:companyId')
-  async getCompanyQuizzesRatioWithHistory(
+  @Get('history/company/:companyId')
+  async getCompanyMembersRatioHistory(
     @User('id') userId: number,
     @Param('companyId', IdValidationPipe) companyId: number,
   ): Promise<IQuizzesResultsWithHistory> {
-    return this.quizResultService.getCompanyQuizzesRatioWithHistory(
+    return this.quizResultService.getCompanyMembersRatioHistory(
       userId,
       companyId,
     );
