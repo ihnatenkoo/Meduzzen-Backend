@@ -4,11 +4,12 @@ export const tagsSorter = (a: any, b: any) => {
     auth: '1',
     user: '2',
     company: '3',
-    invitation: '4',
-    ['join-request']: '5',
-    quiz: '6',
-    ['quiz-result']: '7',
-    question: '8',
+    notification: '4',
+    invitation: '5',
+    ['join-request']: '6',
+    quiz: '7',
+    ['quiz-result']: '8',
+    question: '9',
   };
 
   return order[a]?.localeCompare(order[b]);
