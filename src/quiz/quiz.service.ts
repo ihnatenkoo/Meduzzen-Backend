@@ -5,6 +5,8 @@ import { QuizEntity } from './quiz.entity';
 import { CompanyEntity } from 'src/company/company.entity';
 import { CreateQuizDto } from './dto/createQuiz.dto';
 import { IMessage } from 'src/types';
+import { ENotificationType } from 'src/notification/types';
+import { NotificationService } from 'src/notification/notification.service';
 import { isUserAdmin } from 'src/utils/isUserAdmin';
 import {
   ACCESS_DENIED,
@@ -21,6 +23,7 @@ export class QuizService {
     private readonly quizRepository: Repository<QuizEntity>,
     @InjectRepository(CompanyEntity)
     private readonly companyRepository: Repository<CompanyEntity>,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async getQuiz(quizId: number): Promise<{
@@ -55,7 +58,7 @@ export class QuizService {
   ): Promise<{ quiz: QuizEntity }> {
     const company = await this.companyRepository.findOne({
       where: { id: companyId },
-      relations: ['owner', 'admins'],
+      relations: ['owner', 'admins', 'members'],
     });
 
     if (!company) {
@@ -73,9 +76,36 @@ export class QuizService {
 
     this.logger.log(`Quiz id:${quiz.id} created`);
 
+    await this.sendQuizNotification(company, quiz.name);
+
     delete quiz.company;
 
     return { quiz };
+  }
+
+  async sendQuizNotification(
+    company: CompanyEntity,
+    quizName: string,
+  ): Promise<void> {
+    if (!company.members) {
+      throw new HttpException(
+        'Company members array is required',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const notificationText = `The new quiz ${quizName} is available in the company ${company.name}`;
+
+    await Promise.all(
+      company.members.map(async (user) => {
+        await this.notificationService.createNotification({
+          user,
+          text: notificationText,
+          type: ENotificationType.COMPANY,
+          company,
+        });
+      }),
+    );
   }
 
   async updateQuiz(
