@@ -2,20 +2,25 @@ import {
   Body,
   Controller,
   Get,
-  Param,
   Post,
+  Res,
   UseGuards,
   UsePipes,
+  Query,
+  Param,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Response } from 'express';
+import { createReadStream, promises } from 'fs';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { User } from 'src/decorators/user.decorator';
 import { DtoValidationPipe } from 'src/pipes/dtoValidation.pipe';
 import { IdValidationPipe } from 'src/pipes/idValidationPipe';
 import { CreateQuizResultDto } from './dto/createQuizResult.dto';
 import { UserEntity } from 'src/user/user.entity';
-import { ICreateQuizResult } from './interfaces';
+import { FileType, ICreateQuizResult } from './interfaces';
 import { QuizResultService } from './quiz-result.service';
+import { createFile } from 'src/utils/createFile';
 
 @ApiBearerAuth()
 @ApiTags('quiz')
@@ -34,13 +39,94 @@ export class QuizResultController {
     return this.quizResultService.createQuizResult(user, crateQuizResultDto);
   }
 
-  @ApiOperation({ summary: 'Get quiz result by ID' })
-  @Get(':id')
+  @ApiOperation({
+    summary: 'Download quiz result by user in formats: json,csv',
+  })
+  @Get('download')
   @UseGuards(AuthGuard)
-  async getQuizResult(
+  async downloadUserQuizResult(
     @User('id') userId: number,
-    @Param('id', IdValidationPipe) resultId: number,
-  ) {
-    return this.quizResultService.getQuizResult(userId, resultId);
+    @Query('quizId', IdValidationPipe) quizId: number,
+    @Query('candidateId', IdValidationPipe) candidateId: number,
+    @Query('type') type: FileType,
+    @Res() response: Response,
+  ): Promise<void> {
+    const data = await this.quizResultService.getUserQuizResult(
+      userId,
+      quizId,
+      candidateId,
+    );
+
+    const { filePath, fileName } = await createFile(data, type);
+
+    response.set({
+      'Content-Type': `${type === 'json' ? 'application/json' : 'text/csv'}`,
+      'Content-Disposition': `attachment; filename="${fileName}"`,
+    });
+
+    const fileStream = createReadStream(filePath);
+    fileStream.pipe(response);
+    fileStream.on('close', async () => {
+      await promises.unlink(filePath);
+    });
+  }
+
+  @ApiOperation({
+    summary: 'Download quiz result by company in formats: json,csv',
+  })
+  @Get('download/company/:companyId')
+  @UseGuards(AuthGuard)
+  async downloadCompanyQuizzesResults(
+    @User('id') userId: number,
+    @Param('companyId', IdValidationPipe) companyId: number,
+    @Query('type')
+    type: FileType,
+    @Res() response: Response,
+  ): Promise<void> {
+    const data = await this.quizResultService.getCompanyQuizzesResults(
+      userId,
+      companyId,
+    );
+
+    const { filePath, fileName } = await createFile(data, type);
+
+    response.set({
+      'Content-Type': `${type === 'json' ? 'application/json' : 'text/csv'}`,
+      'Content-Disposition': `attachment; filename="${fileName}"`,
+    });
+
+    const fileStream = createReadStream(filePath);
+    fileStream.pipe(response);
+    fileStream.on('close', async () => {
+      await promises.unlink(filePath);
+    });
+  }
+
+  @ApiOperation({
+    summary: 'Download quiz results by quizId in formats: json,csv',
+  })
+  @Get('download/quiz/:quizId')
+  @UseGuards(AuthGuard)
+  async downloadQuizResult(
+    @User('id') userId: number,
+    @Param('quizId', IdValidationPipe) quizId: number,
+    @Query('type')
+    type: FileType,
+    @Res() response: Response,
+  ): Promise<void> {
+    const data = await this.quizResultService.getQuizResults(userId, quizId);
+
+    const { filePath, fileName } = await createFile(data, type);
+
+    response.set({
+      'Content-Type': `${type === 'json' ? 'application/json' : 'text/csv'}`,
+      'Content-Disposition': `attachment; filename="${fileName}"`,
+    });
+
+    const fileStream = createReadStream(filePath);
+    fileStream.pipe(response);
+    fileStream.on('close', async () => {
+      await promises.unlink(filePath);
+    });
   }
 }
