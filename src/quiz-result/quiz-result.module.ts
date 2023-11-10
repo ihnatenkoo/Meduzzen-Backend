@@ -14,5 +14,6 @@ import { CompanyModule } from 'src/company/company.module';
   ],
   controllers: [QuizResultController],
   providers: [QuizResultService],
+  exports: [TypeOrmModule],
 })
 export class QuizResultModule {}

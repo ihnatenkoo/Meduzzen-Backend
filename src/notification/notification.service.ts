@@ -1,8 +1,10 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
 import { NotificationEntity } from './notification.entity';
-import { ENotificationStatus, INotification } from './types';
+import { QuizResultEntity } from 'src/quiz-result/quiz-result.entity';
+import { ENotificationStatus, ENotificationType, INotification } from './types';
 import { IMessage } from 'src/types';
 import { ACCESS_DENIED } from 'src/constants';
 
@@ -11,6 +13,8 @@ export class NotificationService {
   constructor(
     @InjectRepository(NotificationEntity)
     private readonly notificationRepository: Repository<NotificationEntity>,
+    @InjectRepository(QuizResultEntity)
+    private readonly quizResultRepository: Repository<QuizResultEntity>,
   ) {}
 
   async createNotification(data: INotification): Promise<void> {
@@ -47,5 +51,34 @@ export class NotificationService {
     await this.notificationRepository.save(notification);
 
     return { message: `Notification id:${notification.id} marked as read` };
+  }
+
+  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  private async sendNotificationsOnRepeatingQuizzes(): Promise<void> {
+    const availableQuizzes = await this.quizResultRepository
+      .createQueryBuilder('quizResult')
+      .leftJoinAndSelect('quizResult.quiz', 'quiz')
+      .leftJoinAndSelect('quizResult.user', 'user')
+      .leftJoinAndSelect('quizResult.company', 'company')
+      .where(
+        `((quizResult.finalTime AT TIME ZONE 'UTC') + (quiz.frequency || ' day')::interval < :currentDate)`,
+        {
+          currentDate: new Date(),
+        },
+      )
+      .getMany();
+
+    await Promise.allSettled(
+      availableQuizzes.map(async (result) => {
+        const text = `The quiz ${result.quiz?.name} is available again in the company ${result.company?.name}`;
+
+        await this.createNotification({
+          text,
+          user: result.user,
+          company: result.company,
+          type: ENotificationType.COMPANY,
+        });
+      }),
+    );
   }
 }
