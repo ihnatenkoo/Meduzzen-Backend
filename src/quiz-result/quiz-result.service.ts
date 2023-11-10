@@ -73,9 +73,22 @@ export class QuizResultService {
       );
     }
 
-    if (quiz.completedQuizzes.some((quiz) => quiz.user.id === user.id)) {
+    const existedUserResults = quiz.completedQuizzes
+      .filter((quiz) => quiz.user.id === user.id)
+      .sort((a, b) => b.finalTime.getTime() - a.finalTime.getTime());
+
+    const currentDate = dayjs();
+    const nextAvailableTime = dayjs(existedUserResults[0].finalTime).add(
+      quiz.frequency,
+      'day',
+    );
+
+    if (currentDate < nextAvailableTime) {
+      const diffInHours = nextAvailableTime.diff(currentDate, 'hour');
+      const diffInMinutes = nextAvailableTime.diff(currentDate, 'minute') % 60;
+
       throw new HttpException(
-        'You already passed this quiz',
+        `Quiz will be available in ${diffInHours} hour ${diffInMinutes} minutes`,
         HttpStatus.FORBIDDEN,
       );
     }
