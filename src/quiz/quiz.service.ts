@@ -94,9 +94,9 @@ export class QuizService {
       );
     }
 
-    const text = `The new quiz ${quizName} is available in the company ${company.name}`;
+    const text = `The new quiz ${quizName} created in the company ${company.name}`;
 
-    await Promise.all(
+    await Promise.allSettled(
       company.members.map(async (user) => {
         await this.notificationService.createNotification({
           text,
