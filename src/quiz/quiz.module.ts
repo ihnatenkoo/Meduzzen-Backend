@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CompanyModule } from 'src/company/company.module';
 import { NotificationModule } from 'src/notification/notification.module';
+import { EventsModule } from 'src/events/events.module';
 import { QuizEntity } from './quiz.entity';
 import { QuizController } from './quiz.controller';
 import { QuizService } from './quiz.service';
@@ -11,6 +12,7 @@ import { QuizService } from './quiz.service';
     TypeOrmModule.forFeature([QuizEntity]),
     CompanyModule,
     NotificationModule,
+    EventsModule,
   ],
   controllers: [QuizController],
   providers: [QuizService],
