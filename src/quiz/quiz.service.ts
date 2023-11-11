@@ -8,6 +8,7 @@ import { IMessage } from 'src/types';
 import { ENotificationType } from 'src/notification/types';
 import { NotificationService } from 'src/notification/notification.service';
 import { isUserAdmin } from 'src/utils/isUserAdmin';
+import { EventsGateway } from 'src/events/events.gateway';
 import {
   ACCESS_DENIED,
   COMPANY_NOT_FOUND,
@@ -24,6 +25,7 @@ export class QuizService {
     @InjectRepository(CompanyEntity)
     private readonly companyRepository: Repository<CompanyEntity>,
     private readonly notificationService: NotificationService,
+    private readonly eventsGateway: EventsGateway,
   ) {}
 
   async getQuiz(quizId: number): Promise<{
@@ -94,15 +96,20 @@ export class QuizService {
       );
     }
 
-    const notificationText = `The new quiz ${quizName} is available in the company ${company.name}`;
+    const text = `The new quiz ${quizName} created in the company ${company.name}`;
 
-    await Promise.all(
+    await Promise.allSettled(
       company.members.map(async (user) => {
         await this.notificationService.createNotification({
+          text,
           user,
-          text: notificationText,
-          type: ENotificationType.COMPANY,
           company,
+          type: ENotificationType.COMPANY,
+        });
+
+        await this.eventsGateway.sendMessageToRoom({
+          room: user.id.toString(),
+          text,
         });
       }),
     );
