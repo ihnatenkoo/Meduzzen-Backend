@@ -11,7 +11,7 @@ import { QuizService } from './quiz.service';
   imports: [
     TypeOrmModule.forFeature([QuizEntity]),
     CompanyModule,
-		EventsModule,
+    EventsModule,
     forwardRef(() => NotificationModule),
   ],
   controllers: [QuizController],
