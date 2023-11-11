@@ -1,16 +1,14 @@
 import { Logger, UseGuards } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import {
-  MessageBody,
   OnGatewayConnection,
   OnGatewayDisconnect,
-  SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server } from 'socket.io';
 import { WsAuthGuard } from 'src/guards/ws-auth.guard';
-import { ISocketWithUserId } from './types';
+import { IMessageToRoom, ISocketWithUserId, SocketEvents } from './types';
 
 @WebSocketGateway({
   cors: {
@@ -25,27 +23,24 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
 
-  handleConnection(client: ISocketWithUserId) {
+  async handleConnection(client: ISocketWithUserId): Promise<void> {
     const token = client.handshake?.auth?.token?.split(' ')[1];
 
     const authorized = WsAuthGuard.verifyToken(this.jwtService, client, token);
 
     if (authorized) {
-      client.join(client.userId?.toString());
+      client.join(client.userId.toString());
       this.logger.log(`User id:${client.userId} connected`);
+    } else {
+      client.disconnect();
     }
   }
 
-  handleDisconnect(client: ISocketWithUserId): void {
+  async handleDisconnect(client: ISocketWithUserId): Promise<void> {
     this.logger.log(`User id:${client.userId} disconnected`);
   }
 
-  @SubscribeMessage('events')
-  async events(@MessageBody() data: number) {
-    console.log('events', data);
-  }
-
-  async sendMessage() {
-    console.log('Hello from server');
+  async sendMessageToRoom({ room, text }: IMessageToRoom): Promise<void> {
+    this.server.to(room).emit(SocketEvents.SEND_EVENT, text);
   }
 }

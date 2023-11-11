@@ -8,6 +8,7 @@ import { IMessage } from 'src/types';
 import { ENotificationType } from 'src/notification/types';
 import { NotificationService } from 'src/notification/notification.service';
 import { isUserAdmin } from 'src/utils/isUserAdmin';
+import { EventsGateway } from 'src/events/events.gateway';
 import {
   ACCESS_DENIED,
   COMPANY_NOT_FOUND,
@@ -24,6 +25,7 @@ export class QuizService {
     @InjectRepository(CompanyEntity)
     private readonly companyRepository: Repository<CompanyEntity>,
     private readonly notificationService: NotificationService,
+    private readonly eventsGateway: EventsGateway,
   ) {}
 
   async getQuiz(quizId: number): Promise<{
@@ -103,6 +105,11 @@ export class QuizService {
           user,
           company,
           type: ENotificationType.COMPANY,
+        });
+
+        await this.eventsGateway.sendMessageToRoom({
+          room: user.id.toString(),
+          text,
         });
       }),
     );

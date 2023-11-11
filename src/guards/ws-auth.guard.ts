@@ -30,9 +30,9 @@ export class WsAuthGuard implements CanActivate {
       }) as ITokenPayload;
 
       client.userId = id;
+
       return true;
-    } catch (err) {
-      client.disconnect();
+    } catch (error) {
       return false;
     }
   }
