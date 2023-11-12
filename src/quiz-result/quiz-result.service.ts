@@ -419,8 +419,7 @@ export class QuizResultService {
     const queryBuilder = this.quizResultRepository
       .createQueryBuilder('quizResult')
       .leftJoinAndSelect('quizResult.company', 'company')
-      .where('company.id = :companyId', { companyId })
-      .andWhere('user.id = :candidateId', { candidateId });
+      .where('company.id = :companyId', { companyId });
 
     if (candidateId) {
       queryBuilder
@@ -430,7 +429,7 @@ export class QuizResultService {
 
     const results: IHistoryResultsRaw[] = await queryBuilder
       .select([
-        "DATE_TRUNC('day', quizResult.finalTime AT TIME ZONE 'UTC') AT TIME ZONE 'Europe/Kiev' AS date",
+        "DATE_TRUNC('day', quizResult.finalTime) AS date",
         'SUM(CAST(quizResult.correctAnswers AS DECIMAL)) / SUM(quizResult.totalQuestions) AS average_ratio',
       ])
       .groupBy('date')

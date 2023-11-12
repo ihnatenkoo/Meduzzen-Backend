@@ -61,7 +61,7 @@ export class NotificationService {
       .leftJoinAndSelect('quizResult.user', 'user')
       .leftJoinAndSelect('quizResult.company', 'company')
       .where(
-        `((quizResult.finalTime AT TIME ZONE 'UTC') + (quiz.frequency || ' day')::interval < :currentDate)`,
+        `quizResult.finalTime  + (quiz.frequency || ' day')::interval < :currentDate`,
         {
           currentDate: new Date(),
         },
