@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { NotificationEntity } from './notification.entity';
 import { QuizResultEntity } from 'src/quiz-result/quiz-result.entity';
+import { EventsGateway } from 'src/events/events.gateway';
 import { ENotificationStatus, ENotificationType, INotification } from './types';
 import { IMessage } from 'src/types';
 import { ACCESS_DENIED } from 'src/constants';
@@ -15,6 +16,7 @@ export class NotificationService {
     private readonly notificationRepository: Repository<NotificationEntity>,
     @InjectRepository(QuizResultEntity)
     private readonly quizResultRepository: Repository<QuizResultEntity>,
+    private readonly eventsGateway: EventsGateway,
   ) {}
 
   async createNotification(data: INotification): Promise<void> {
@@ -66,6 +68,19 @@ export class NotificationService {
           currentDate: new Date(),
         },
       )
+      .andWhere((queryBuilder) => {
+        const subQuery = queryBuilder
+          .subQuery()
+          .select('MAX(quizzes_results.finalTime)', 'maxFinalTime')
+          .from(QuizResultEntity, 'quizzes_results')
+          .where(
+            'quizzes_results.quiz.id = quiz.id AND quizzes_results.user.id = user.id',
+          )
+          .groupBy('quizzes_results.quiz.id, quizzes_results.user.id')
+          .getQuery();
+
+        return `quizResult.finalTime = (${subQuery})`;
+      })
       .getMany();
 
     await Promise.allSettled(
@@ -77,6 +92,11 @@ export class NotificationService {
           user: result.user,
           company: result.company,
           type: ENotificationType.COMPANY,
+        });
+
+        await this.eventsGateway.sendMessageToRoom({
+          room: result.user?.id.toString(),
+          text,
         });
       }),
     );
