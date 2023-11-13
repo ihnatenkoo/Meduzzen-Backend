@@ -18,6 +18,8 @@ import { JoinRequestModule } from './joinRequest/joinRequest.module';
 import { QuizModule } from './quiz/quiz.module';
 import { QuestionModule } from './question/question.module';
 import { QuizResultModule } from './quiz-result/quiz-result.module';
+import { NotificationModule } from './notification/notification.module';
+import { EventsModule } from './events/events.module';
 
 @Module({
   imports: [
@@ -41,6 +43,8 @@ import { QuizResultModule } from './quiz-result/quiz-result.module';
     QuizModule,
     QuestionModule,
     QuizResultModule,
+    NotificationModule,
+    EventsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

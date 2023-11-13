@@ -8,10 +8,12 @@ import { randomBytes } from 'crypto';
 import { CreateUserDto } from 'src/auth/dto/createUser.dto';
 import { LoginDto } from './dto/login.dto';
 import { LoginAuth0Dto } from './dto/loginAuth0.dto';
+import { ResetPasswordDto } from './dto/resetPassword.dto';
 import { UserEntity } from 'src/user/user.entity';
 import { ICreateUserResponse, ITokenPayload, ITokens } from './types';
 import { IMessage } from 'src/types';
-import { ResetPasswordDto } from './dto/resetPassword.dto';
+import { ENotificationType } from 'src/notification/types';
+import { NotificationService } from 'src/notification/notification.service';
 import {
   ACCESS_DENIED,
   BAD_CREDENTIALS,
@@ -31,6 +33,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     @InjectRepository(UserEntity)
     private readonly userRepository: Repository<UserEntity>,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async createUser(createUserDto: CreateUserDto): Promise<ICreateUserResponse> {
@@ -57,6 +60,12 @@ export class AuthService {
     });
 
     this.logger.log(`${USER_CERATED_SUCCESSFULLY}. Email: ${user.email}`);
+
+    await this.notificationService.createNotification({
+      user,
+      text: 'Welcome to the IQuizzik app',
+      type: ENotificationType.SYSTEM,
+    });
 
     return {
       message: USER_CERATED_SUCCESSFULLY,
