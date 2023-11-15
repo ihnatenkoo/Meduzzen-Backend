@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CompanyModule } from 'src/company/company.module';
 import { NotificationModule } from 'src/notification/notification.module';
@@ -11,8 +11,8 @@ import { QuizService } from './quiz.service';
   imports: [
     TypeOrmModule.forFeature([QuizEntity]),
     CompanyModule,
-    NotificationModule,
     EventsModule,
+    forwardRef(() => NotificationModule),
   ],
   controllers: [QuizController],
   providers: [QuizService],

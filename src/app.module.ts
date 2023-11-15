@@ -1,4 +1,5 @@
 import { MiddlewareConsumer, Module, RequestMethod } from '@nestjs/common';
+import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule } from '@nestjs/config';
@@ -20,9 +21,11 @@ import { QuestionModule } from './question/question.module';
 import { QuizResultModule } from './quiz-result/quiz-result.module';
 import { NotificationModule } from './notification/notification.module';
 import { EventsModule } from './events/events.module';
+import { CronModule } from './cron/cron.module';
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     ConfigModule.forRoot(),
     TypeOrmModule.forRoot(dataSourceOptions),
     CacheModule.register({
@@ -45,6 +48,7 @@ import { EventsModule } from './events/events.module';
     QuizResultModule,
     NotificationModule,
     EventsModule,
+    CronModule,
   ],
   controllers: [AppController],
   providers: [AppService],

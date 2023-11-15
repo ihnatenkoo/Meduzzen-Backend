@@ -1,6 +1,6 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
 import { NotificationEntity } from './notification.entity';
 import { ENotificationStatus, INotification } from './types';
 import { IMessage } from 'src/types';
