@@ -21,6 +21,7 @@ import { QuestionModule } from './question/question.module';
 import { QuizResultModule } from './quiz-result/quiz-result.module';
 import { NotificationModule } from './notification/notification.module';
 import { EventsModule } from './events/events.module';
+import { CronModule } from './cron/cron.module';
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { EventsModule } from './events/events.module';
     QuizResultModule,
     NotificationModule,
     EventsModule,
+    CronModule,
   ],
   controllers: [AppController],
   providers: [AppService],
